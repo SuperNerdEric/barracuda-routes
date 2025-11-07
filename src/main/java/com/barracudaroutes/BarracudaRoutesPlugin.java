@@ -9,6 +9,8 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
+
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
@@ -41,10 +43,9 @@ public class BarracudaRoutesPlugin extends Plugin
 	{
 		RouteManager.initDefaultRoutes();
 		panel = new BarracudaRoutesPanel(this);
-		BufferedImage icon = loadIcon();
 		navButton = NavigationButton.builder()
 				.tooltip("Barracuda Routes")
-				.icon(icon)
+				.icon(ImageUtil.loadImageResource(getClass(), "/barracuda_icon.png"))
 				.priority(7)
 				.panel(panel)
 				.build();
@@ -58,22 +59,6 @@ public class BarracudaRoutesPlugin extends Plugin
 		overlayManager.remove(routeOverlay);
 		clientToolbar.removeNavigation(navButton);
 		panel = null;
-	}
-
-	private BufferedImage loadIcon()
-	{
-		try (InputStream in = getClass().getResourceAsStream("/barracuda_icon.png"))
-		{
-			if (in != null)
-			{
-				return ImageIO.read(in);
-			}
-		}
-		catch (IOException ignored)
-		{
-		}
-		BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-		return img;
 	}
 
 	public Client getClient()
