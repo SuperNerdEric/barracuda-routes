@@ -148,6 +148,7 @@ public class RouteEditPanel extends PluginPanel
         });
         
         JScrollPane tilesScroll = new JScrollPane(tilesList);
+        tilesScroll.setPreferredSize(new Dimension(Integer.MAX_VALUE, 800));
         add(tilesScroll);
         add(Box.createVerticalGlue());
         
