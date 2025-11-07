@@ -42,8 +42,6 @@ public class RouteEditPanel extends PluginPanel
     private JTextField nameField;
     private JTextArea descriptionField;
     private JComboBox<String> trialComboBox;
-    private JTextField customTrialField;
-    private JLabel customTrialLabel;
     private JList<Object> tilesList;
     private DefaultListModel<Object> listModel;
     private JButton editButton;
@@ -194,30 +192,10 @@ public class RouteEditPanel extends PluginPanel
         JPanel trialPanel = new JPanel();
         trialPanel.setLayout(new BoxLayout(trialPanel, BoxLayout.X_AXIS));
         trialPanel.add(new JLabel("Trial:"));
-        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide", "Custom"};
+        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
         trialComboBox = new JComboBox<>(trialOptions);
         trialPanel.add(trialComboBox);
         panel.add(trialPanel);
-        
-        // Custom trial name field (initially hidden)
-        JPanel customTrialPanel = new JPanel();
-        customTrialPanel.setLayout(new BoxLayout(customTrialPanel, BoxLayout.X_AXIS));
-        customTrialLabel = new JLabel("Custom Trial Name:");
-        customTrialLabel.setVisible(false);
-        customTrialPanel.add(customTrialLabel);
-        customTrialField = new JTextField(20);
-        customTrialField.setVisible(false);
-        customTrialPanel.add(customTrialField);
-        panel.add(customTrialPanel);
-        
-        // Show/hide custom field based on selection
-        trialComboBox.addActionListener(e -> {
-            boolean isCustom = "Custom".equals(trialComboBox.getSelectedItem());
-            customTrialLabel.setVisible(isCustom);
-            customTrialField.setVisible(isCustom);
-            panel.revalidate();
-            panel.repaint();
-        });
         
         return panel;
     }
@@ -229,24 +207,22 @@ public class RouteEditPanel extends PluginPanel
         
         // Set trial combo box
         String trialName = route.getTrialName();
-        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide", "Custom"};
-        boolean isCustom = true;
+        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
+        boolean found = false;
         for (String option : trialOptions)
         {
             if (option.equals(trialName))
             {
                 trialComboBox.setSelectedItem(option);
-                isCustom = false;
+                found = true;
                 break;
             }
         }
-        if (isCustom)
+        // If trial name doesn't match any option, default to first option
+        if (!found && trialOptions.length > 0)
         {
-            trialComboBox.setSelectedItem("Custom");
-            customTrialField.setText(trialName);
+            trialComboBox.setSelectedItem(trialOptions[0]);
         }
-        customTrialLabel.setVisible(isCustom);
-        customTrialField.setVisible(isCustom);
         
         // Initialize currentLap to the highest lap number, or 1 if no points
         currentLap = 1;
@@ -492,20 +468,7 @@ public class RouteEditPanel extends PluginPanel
         }
         
         String description = descriptionField.getText().trim();
-        String trialName;
-        if ("Custom".equals(trialComboBox.getSelectedItem()))
-        {
-            String customTrial = customTrialField.getText().trim();
-            if (customTrial.isEmpty())
-            {
-                return;
-            }
-            trialName = customTrial;
-        }
-        else
-        {
-            trialName = (String) trialComboBox.getSelectedItem();
-        }
+        String trialName = (String) trialComboBox.getSelectedItem();
         
         // Update route
         route.setName(name);
