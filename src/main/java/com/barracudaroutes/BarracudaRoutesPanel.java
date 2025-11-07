@@ -20,8 +20,10 @@ public class BarracudaRoutesPanel extends PluginPanel
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cardPanel = new JPanel(cardLayout);
     private final JPanel mainPanel = new JPanel();
-    private JList<Route> routesList;
-    private DefaultListModel<Route> listModel;
+    private JList<Object> routesList;
+    private DefaultListModel<Object> listModel;
+    
+    private static final String[] TRIAL_OPTIONS = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
     private JButton editButton;
     private JButton deleteButton;
     private JPanel actionButtonsPanel;
@@ -109,11 +111,8 @@ public class BarracudaRoutesPanel extends PluginPanel
         routeListScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT); // Explicitly align to left
         mainPanel.add(routeListScrollPane);
         
-        // Add existing routes
-        for (Route r : RouteManager.getAllRoutes())
-        {
-            listModel.addElement(r);
-        }
+        // Populate routes list organized by trial
+        populateRoutesList();
         
         createButton.addActionListener(e -> onCreate());
         
@@ -125,12 +124,45 @@ public class BarracudaRoutesPanel extends PluginPanel
         updateSelection();
     }
 
+    private void populateRoutesList()
+    {
+        listModel.clear();
+        
+        // Group routes by trial
+        java.util.Map<String, java.util.List<Route>> routesByTrial = new java.util.HashMap<>();
+        for (Route route : RouteManager.getAllRoutes())
+        {
+            String trialName = route.getTrialName();
+            if (trialName == null || trialName.isEmpty())
+            {
+                trialName = TRIAL_OPTIONS[0]; // Default to first trial
+            }
+            routesByTrial.computeIfAbsent(trialName, k -> new java.util.ArrayList<>()).add(route);
+        }
+        
+        // Add sections for each trial in order
+        for (String trialName : TRIAL_OPTIONS)
+        {
+            // Add trial header
+            listModel.addElement(trialName);
+            
+            // Add routes for this trial (if any)
+            if (routesByTrial.containsKey(trialName))
+            {
+                for (Route route : routesByTrial.get(trialName))
+                {
+                    listModel.addElement(route);
+                }
+            }
+        }
+    }
+    
     private void onCreate()
     {
         // Create a new route immediately
         Route newRoute = new Route("", "", "The Tempor Tantrum");
         RouteManager.addRoute(newRoute);
-        listModel.addElement(newRoute);
+        populateRoutesList();
         
         // Switch to edit panel
         startEditing(newRoute, true);
@@ -138,19 +170,19 @@ public class BarracudaRoutesPanel extends PluginPanel
     
     private void onEditSelected()
     {
-        Route selected = routesList.getSelectedValue();
-        if (selected != null)
+        Object selected = routesList.getSelectedValue();
+        if (selected instanceof Route)
         {
-            startEditing(selected);
+            startEditing((Route) selected);
         }
     }
     
     private void onDeleteSelected()
     {
-        Route selected = routesList.getSelectedValue();
-        if (selected != null)
+        Object selected = routesList.getSelectedValue();
+        if (selected instanceof Route)
         {
-            onDelete(selected);
+            onDelete((Route) selected);
         }
     }
 
@@ -163,7 +195,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         }
         
         RouteManager.removeRoute(route);
-        listModel.removeElement(route);
+        populateRoutesList();
         
         // Clear selection if the deleted route was selected
         if (RouteManager.getActiveRoute() == route)
@@ -175,10 +207,10 @@ public class BarracudaRoutesPanel extends PluginPanel
     
     private void updateSelection()
     {
-        Route selected = routesList.getSelectedValue();
-        if (selected != null)
+        Object selected = routesList.getSelectedValue();
+        if (selected instanceof Route)
         {
-            RouteManager.setActiveRoute(selected);
+            RouteManager.setActiveRoute((Route) selected);
             actionButtonsPanel.setVisible(true);
         }
         else
@@ -196,10 +228,19 @@ public class BarracudaRoutesPanel extends PluginPanel
         {
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             
-            if (value instanceof Route)
+            if (value instanceof String)
             {
+                // Trial section header
+                String trialName = (String) value;
+                label.setText(trialName);
+                label.setFont(label.getFont().deriveFont(Font.BOLD));
+            }
+            else if (value instanceof Route)
+            {
+                // Route item
                 Route route = (Route) value;
-                label.setText(route.getName());
+                label.setText("  " + route.getName()); // Indent routes under their trial
+                label.setFont(label.getFont().deriveFont(Font.PLAIN));
             }
             
             return label;
@@ -224,7 +265,11 @@ public class BarracudaRoutesPanel extends PluginPanel
         RouteManager.setActiveRoute(route);
         
         // Select the route in the list
-        routesList.setSelectedValue(route, true);
+        int index = listModel.indexOf(route);
+        if (index >= 0)
+        {
+            routesList.setSelectedIndex(index);
+        }
         
         // Create new edit panel
         editPanel = new RouteEditPanel(plugin, route, isNew, this::showMainPanel, this::onEditSave, colorPickerManager);
@@ -251,21 +296,23 @@ public class BarracudaRoutesPanel extends PluginPanel
     
     private void onEditSave()
     {
-        // Refresh list by updating the route
+        // Refresh list - need to repopulate since trial might have changed
         if (editPanel != null && editPanel.route != null)
         {
             // If route was removed (new route without name), remove from list
             if (!RouteManager.getAllRoutes().contains(editPanel.route))
             {
-                listModel.removeElement(editPanel.route);
+                populateRoutesList();
             }
             else
             {
-                // Update the list to reflect name changes
+                // Repopulate to handle trial changes and name updates
+                populateRoutesList();
+                // Try to restore selection
                 int index = listModel.indexOf(editPanel.route);
                 if (index >= 0)
                 {
-                    listModel.set(index, editPanel.route);
+                    routesList.setSelectedIndex(index);
                 }
             }
         }
