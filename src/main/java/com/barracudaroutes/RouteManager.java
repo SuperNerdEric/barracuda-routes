@@ -7,10 +7,11 @@ public class RouteManager
 {
     private static final List<Route> routes = new ArrayList<>();
     private static Route active = null;
+    private static RoutePoint selectedTile = null;
 
     public static void initDefaultRoutes()
     {
-        Route r1 = new Route("Prepackaged: Example loop");
+        Route r1 = new Route("Example route", "", "The Tempor Tantrum");
         r1.addPoint(new RoutePoint(3001, 3230, 0));
         r1.addPoint(new RoutePoint(3003, 3230, 0));
         r1.addPoint(new RoutePoint(3003, 3232, 0));
@@ -45,5 +46,15 @@ public class RouteManager
     public static void setActiveRoute(Route r)
     {
         active = r;
+    }
+    
+    public static RoutePoint getSelectedTile()
+    {
+        return selectedTile;
+    }
+    
+    public static void setSelectedTile(RoutePoint tile)
+    {
+        selectedTile = tile;
     }
 }

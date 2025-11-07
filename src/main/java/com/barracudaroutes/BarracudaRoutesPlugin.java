@@ -35,6 +35,9 @@ public class BarracudaRoutesPlugin extends Plugin
 	@Inject
 	private RouteOverlay routeOverlay;
 
+	@Inject
+	private net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager;
+
 	private BarracudaRoutesPanel panel;
 	private NavigationButton navButton;
 
@@ -42,7 +45,7 @@ public class BarracudaRoutesPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		RouteManager.initDefaultRoutes();
-		panel = new BarracudaRoutesPanel(this);
+		panel = new BarracudaRoutesPanel(this, colorPickerManager);
 		navButton = NavigationButton.builder()
 				.tooltip("Barracuda Routes")
 				.icon(ImageUtil.loadImageResource(getClass(), "/barracuda_icon.png"))
