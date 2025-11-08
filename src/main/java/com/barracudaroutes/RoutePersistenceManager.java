@@ -246,12 +246,20 @@ public class RoutePersistenceManager
     
     /**
      * Save a route to a JSON file
+     * Only saves if the route has a name set
      */
     public void saveRoute(Route route)
     {
         if (route == null)
         {
             log.warn("Attempted to save null route");
+            return;
+        }
+        
+        String routeName = route.getName();
+        if (routeName == null || routeName.trim().isEmpty())
+        {
+            log.debug("Skipping save for route without name");
             return;
         }
         
@@ -292,12 +300,27 @@ public class RoutePersistenceManager
     
     /**
      * Delete a route's JSON file
+     * Only deletes if the route has a name set
      */
     public void deleteRoute(Route route)
     {
-        if (route == null || route.getFileUuid() == null)
+        if (route == null)
         {
-            log.warn("Attempted to delete route with no UUID");
+            log.warn("Attempted to delete null route");
+            return;
+        }
+        
+        String routeName = route.getName();
+        if (routeName == null || routeName.trim().isEmpty())
+        {
+            log.debug("Skipping delete for route without name");
+            return;
+        }
+        
+        // If route has no UUID, it was never saved, so nothing to delete
+        if (route.getFileUuid() == null)
+        {
+            log.debug("Route has no UUID, skipping delete");
             return;
         }
         
@@ -308,7 +331,7 @@ public class RoutePersistenceManager
         }
         
         Path trialDir = getTrialDir(trialName);
-        String fileName = generateFileName(route.getName(), route.getFileUuid());
+        String fileName = generateFileName(routeName, route.getFileUuid());
         Path filePath = trialDir.resolve(fileName);
         
         try
