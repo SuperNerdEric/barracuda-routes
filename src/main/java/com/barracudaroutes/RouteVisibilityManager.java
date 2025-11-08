@@ -156,7 +156,8 @@ public class RouteVisibilityManager
             initializeQueue(activeRoute);
         }
         
-        if (activeRoute == null || activeRoute.getPoints().isEmpty())
+        List<RouteNode> routeNodes = activeRoute.getRoute();
+        if (routeNodes.isEmpty())
         {
             return;
         }
@@ -187,32 +188,44 @@ public class RouteVisibilityManager
     }
     
     /**
-     * Initialize the queue with the first MAX_VISIBLE_TILES tiles
+     * Initialize the queue with the first MAX_VISIBLE_TILES point nodes
      */
     private void initializeQueue(Route route)
     {
         tileQueue.clear();
         
-        if (route == null || route.getPoints().isEmpty())
+        if (route == null)
         {
             return;
         }
         
-        List<RoutePoint> points = route.getPoints();
-        int tilesToAdd = Math.min(getConfig().maxVisibleTiles(), points.size());
-        
-        for (int i = 0; i < tilesToAdd; i++)
+        List<RouteNode> routeNodes = route.getRoute();
+        if (routeNodes.isEmpty())
         {
-            tileQueue.add(new ManagedTile(i));
+            return;
+        }
+        
+        // Count point nodes (skip lap dividers)
+        int pointCount = 0;
+        int tilesToAdd = getConfig().maxVisibleTiles();
+        
+        for (int i = 0; i < routeNodes.size() && pointCount < tilesToAdd; i++)
+        {
+            RouteNode node = routeNodes.get(i);
+            if (node instanceof PointNode)
+            {
+                tileQueue.add(new ManagedTile(i));
+                pointCount++;
+            }
         }
     }
     
     /**
-     * Reset the queue back to full (first MAX_VISIBLE_TILES tiles)
+     * Reset the queue back to full (first MAX_VISIBLE_TILES point nodes)
      */
     private void resetQueue()
     {
-        if (currentRoute == null || currentRoute.getPoints().isEmpty())
+        if (currentRoute == null)
         {
             return;
         }
@@ -225,12 +238,16 @@ public class RouteVisibilityManager
      */
     private boolean isQueueAtEnd()
     {
-        if (currentRoute == null || currentRoute.getPoints().isEmpty())
+        if (currentRoute == null)
         {
             return false;
         }
         
-        List<RoutePoint> points = currentRoute.getPoints();
+        List<RouteNode> routeNodes = currentRoute.getRoute();
+        if (routeNodes.isEmpty())
+        {
+            return false;
+        }
         
         // Check if all tiles in queue are hidden
         boolean allHidden = true;
@@ -248,7 +265,7 @@ public class RouteVisibilityManager
             return false;
         }
         
-        // Check if we've processed all tiles
+        // Check if we've processed all point nodes
         int maxIndex = -1;
         for (ManagedTile tile : tileQueue)
         {
@@ -258,7 +275,16 @@ public class RouteVisibilityManager
             }
         }
         
-        return maxIndex >= points.size() - 1;
+        // Check if there are any more point nodes after maxIndex
+        for (int i = maxIndex + 1; i < routeNodes.size(); i++)
+        {
+            if (routeNodes.get(i) instanceof PointNode)
+            {
+                return false; // There are more point nodes
+            }
+        }
+        
+        return true; // All point nodes have been processed
     }
     
     /**
@@ -277,12 +303,16 @@ public class RouteVisibilityManager
      */
     private void processQueue(WorldPoint playerPos)
     {
-        if (currentRoute == null || currentRoute.getPoints().isEmpty())
+        if (currentRoute == null)
         {
             return;
         }
         
-        List<RoutePoint> points = currentRoute.getPoints();
+        List<RouteNode> routeNodes = currentRoute.getRoute();
+        if (routeNodes.isEmpty())
+        {
+            return;
+        }
         
         // Find the next tile in queue that isn't pending hide and isn't hidden
         ManagedTile nextTile = null;
@@ -313,15 +343,19 @@ public class RouteVisibilityManager
         {
             // No tiles to check in queue, try to add more if we haven't reached the end
             int maxIndex = getMaxQueueIndex();
-            if (tileQueue.isEmpty() || maxIndex < points.size() - 1)
+            if (tileQueue.isEmpty() || maxIndex < routeNodes.size() - 1)
             {
-                // Add next tile to queue
-                int nextIndex = maxIndex + 1;
-                if (nextIndex < points.size())
+                // Find next point node after maxIndex
+                for (int i = maxIndex + 1; i < routeNodes.size(); i++)
                 {
-                    ManagedTile newTile = new ManagedTile(nextIndex);
-                    tileQueue.add(newTile);
-                    nextTile = newTile;
+                    RouteNode node = routeNodes.get(i);
+                    if (node instanceof PointNode)
+                    {
+                        ManagedTile newTile = new ManagedTile(i);
+                        tileQueue.add(newTile);
+                        nextTile = newTile;
+                        break;
+                    }
                 }
             }
         }
@@ -332,7 +366,13 @@ public class RouteVisibilityManager
         }
         
         // Check distance to player
-        RoutePoint point = points.get(nextTile.index);
+        RouteNode node = routeNodes.get(nextTile.index);
+        if (!(node instanceof PointNode))
+        {
+            return; // Shouldn't happen, but be safe
+        }
+        
+        PointNode point = (PointNode) node;
         int distance = getDistance(playerPos, point);
         
         if (distance <= getConfig().hideDistance())
@@ -377,10 +417,17 @@ public class RouteVisibilityManager
             return true; // Show all tiles when disabled or no route
         }
         
-        List<RoutePoint> points = currentRoute.getPoints();
-        if (index < 0 || index >= points.size())
+        List<RouteNode> routeNodes = currentRoute.getRoute();
+        if (index < 0 || index >= routeNodes.size())
         {
             return false;
+        }
+        
+        // Only point nodes can be visible
+        RouteNode node = routeNodes.get(index);
+        if (!(node instanceof PointNode))
+        {
+            return false; // Lap dividers are not "visible" in this sense
         }
         
         // Find the tile in the queue
@@ -393,13 +440,23 @@ public class RouteVisibilityManager
         }
         
         // Tile not in queue - check if it's beyond max visible
-        int firstVisibleIndex = findFirstVisibleIndex(points);
+        int firstVisibleIndex = findFirstVisibleIndex(routeNodes);
         if (index < firstVisibleIndex)
         {
             return false; // This tile should be hidden (previous tiles were hidden)
         }
         
-        if (index >= firstVisibleIndex + getConfig().maxVisibleTiles())
+        // Count point nodes from firstVisibleIndex to index
+        int pointCount = 0;
+        for (int i = firstVisibleIndex; i <= index && i < routeNodes.size(); i++)
+        {
+            if (routeNodes.get(i) instanceof PointNode)
+            {
+                pointCount++;
+            }
+        }
+        
+        if (pointCount > getConfig().maxVisibleTiles())
         {
             return false; // Beyond max visible tiles
         }
@@ -408,7 +465,7 @@ public class RouteVisibilityManager
     }
     
     /**
-     * Get the list of visible tile indices
+     * Get the list of visible tile indices (only point nodes, not lap dividers)
      */
     public Set<Integer> getVisibleTileIndices()
     {
@@ -420,27 +477,33 @@ public class RouteVisibilityManager
             return new HashSet<>();
         }
         
-        // Always use the current active route to get the latest points
-        List<RoutePoint> points = activeRoute.getPoints();
+        // Always use the current active route to get the latest nodes
+        List<RouteNode> routeNodes = activeRoute.getRoute();
         
         if (!enabled)
         {
-            // Return all indices when disabled
+            // Return all point node indices when disabled
             Set<Integer> allIndices = new HashSet<>();
-            for (int i = 0; i < points.size(); i++)
+            for (int i = 0; i < routeNodes.size(); i++)
             {
-                allIndices.add(i);
+                if (routeNodes.get(i) instanceof PointNode)
+                {
+                    allIndices.add(i);
+                }
             }
             return allIndices;
         }
         
-        // In edit mode, show all tiles
+        // In edit mode, show all point nodes
         if (routeManager.isInEditMode())
         {
             Set<Integer> allIndices = new HashSet<>();
-            for (int i = 0; i < points.size(); i++)
+            for (int i = 0; i < routeNodes.size(); i++)
             {
-                allIndices.add(i);
+                if (routeNodes.get(i) instanceof PointNode)
+                {
+                    allIndices.add(i);
+                }
             }
             return allIndices;
         }
@@ -453,30 +516,37 @@ public class RouteVisibilityManager
         }
         
         Set<Integer> visible = new HashSet<>();
-        List<RoutePoint> currentRoutePoints = currentRoute.getPoints();
-        int firstVisibleIndex = findFirstVisibleIndex(currentRoutePoints);
+        List<RouteNode> currentRouteNodes = currentRoute.getRoute();
+        int firstVisibleIndex = findFirstVisibleIndex(currentRouteNodes);
         
-        for (int i = firstVisibleIndex; i < currentRoutePoints.size() && i < firstVisibleIndex + getConfig().maxVisibleTiles(); i++)
+        // Count point nodes from firstVisibleIndex
+        int pointCount = 0;
+        for (int i = firstVisibleIndex; i < currentRouteNodes.size() && pointCount < getConfig().maxVisibleTiles(); i++)
         {
-            // Check if tile is visible by looking in queue
-            boolean found = false;
-            for (ManagedTile tile : tileQueue)
+            RouteNode node = currentRouteNodes.get(i);
+            if (node instanceof PointNode)
             {
-                if (tile.index == i)
+                // Check if tile is visible by looking in queue
+                boolean found = false;
+                for (ManagedTile tile : tileQueue)
                 {
-                    if (tile.isVisible())
+                    if (tile.index == i)
                     {
-                        visible.add(i);
+                        if (tile.isVisible())
+                        {
+                            visible.add(i);
+                        }
+                        found = true;
+                        break;
                     }
-                    found = true;
-                    break;
                 }
-            }
-            
-            // If not in queue yet, it should be visible
-            if (!found)
-            {
-                visible.add(i);
+                
+                // If not in queue yet, it should be visible
+                if (!found)
+                {
+                    visible.add(i);
+                }
+                pointCount++;
             }
         }
         
@@ -493,12 +563,18 @@ public class RouteVisibilityManager
     }
     
     /**
-     * Find the first visible tile index (first tile that isn't hidden)
+     * Find the first visible point node index (first point node that isn't hidden)
      */
-    private int findFirstVisibleIndex(List<RoutePoint> points)
+    private int findFirstVisibleIndex(List<RouteNode> routeNodes)
     {
-        for (int i = 0; i < points.size(); i++)
+        for (int i = 0; i < routeNodes.size(); i++)
         {
+            RouteNode node = routeNodes.get(i);
+            if (!(node instanceof PointNode))
+            {
+                continue; // Skip lap dividers
+            }
+            
             // Check if this tile is in the queue and visible
             boolean isVisible = true;
             for (ManagedTile tile : tileQueue)
@@ -515,14 +591,14 @@ public class RouteVisibilityManager
                 return i;
             }
         }
-        // All tiles are hidden
-        return points.size();
+        // All point nodes are hidden
+        return routeNodes.size();
     }
     
     /**
-     * Calculate distance between player position and route point
+     * Calculate distance between player position and point node
      */
-    private int getDistance(WorldPoint playerPos, RoutePoint point)
+    private int getDistance(WorldPoint playerPos, PointNode point)
     {
         if (playerPos.getPlane() != point.getPlane())
         {

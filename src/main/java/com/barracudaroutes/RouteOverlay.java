@@ -64,8 +64,8 @@ public class RouteOverlay extends Overlay
         {
             return null;
         }
-        List<RoutePoint> pts = active.getPoints();
-        if (pts.isEmpty())
+        List<RouteNode> routeNodes = active.getRoute();
+        if (routeNodes.isEmpty())
         {
             return null;
         }
@@ -75,46 +75,57 @@ public class RouteOverlay extends Overlay
         
         g.setStroke(new BasicStroke(3.0f));
         Point prev = null;
+        int currentLap = 1;
         
-        for (int i = 0; i < pts.size(); i++)
+        for (int i = 0; i < routeNodes.size(); i++)
         {
-            // Skip if tile is not visible
-            if (!visibleIndices.contains(i))
+            RouteNode node = routeNodes.get(i);
+            
+            if (node instanceof LapDividerNode)
             {
-                prev = null; // Break the line when skipping tiles
+                // Update current lap
+                currentLap = ((LapDividerNode) node).getLapNumber();
+                prev = null; // Break the line at lap dividers
                 continue;
             }
-            
-            RoutePoint rp = pts.get(i);
-            WorldPoint wp = new WorldPoint(rp.getX(), rp.getY(), rp.getPlane());
-            LocalPoint lp = LocalPoint.fromWorld(client, wp.getX(), wp.getY());
-            if (lp == null)
+            else if (node instanceof PointNode)
             {
-                prev = null;
-                continue;
+                // Skip if tile is not visible
+                if (!visibleIndices.contains(i))
+                {
+                    prev = null; // Break the line when skipping tiles
+                    continue;
+                }
+                
+                PointNode point = (PointNode) node;
+                WorldPoint wp = new WorldPoint(point.getX(), point.getY(), point.getPlane());
+                LocalPoint lp = LocalPoint.fromWorld(client, wp.getX(), wp.getY());
+                if (lp == null)
+                {
+                    prev = null;
+                    continue;
+                }
+                net.runelite.api.Point canvas = Perspective.localToCanvas(client, lp, client.getPlane());
+                if (canvas == null)
+                {
+                    prev = null;
+                    continue;
+                }
+                
+                // Set color for this point's lap (used for the line segment from prev to this point)
+                Color lapColor = getLapColor(active, currentLap);
+                g.setColor(lapColor);
+                
+                if (prev != null)
+                {
+                    g.drawLine(prev.getX(), prev.getY(), canvas.getX(), canvas.getY());
+                }
+                prev = canvas;
             }
-            net.runelite.api.Point canvas = Perspective.localToCanvas(client, lp, client.getPlane());
-            if (canvas == null)
-            {
-                prev = null;
-                continue;
-            }
-            
-            int currentLap = rp.getLap();
-            
-            // Set color for this point's lap (used for the line segment from prev to this point)
-            Color lapColor = getLapColor(active, currentLap);
-            g.setColor(lapColor);
-            
-            if (prev != null)
-            {
-                g.drawLine(prev.getX(), prev.getY(), canvas.getX(), canvas.getY());
-            }
-            prev = canvas;
         }
         
         // Highlight selected tile if one is selected
-        RoutePoint selectedTile = routeManager.getSelectedTile();
+        PointNode selectedTile = routeManager.getSelectedTile();
         if (selectedTile != null)
         {
             WorldPoint wp = new WorldPoint(selectedTile.getX(), selectedTile.getY(), selectedTile.getPlane());

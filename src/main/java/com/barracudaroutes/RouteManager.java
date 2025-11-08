@@ -10,7 +10,7 @@ public class RouteManager
 {
     private final List<Route> routes = new ArrayList<>();
     private Route active = null;
-    private RoutePoint selectedTile = null;
+    private PointNode selectedTile = null;
     private boolean inEditMode = false;
     
     private final RoutePersistenceManager persistenceManager;
@@ -72,12 +72,12 @@ public class RouteManager
         active = r;
     }
     
-    public RoutePoint getSelectedTile()
+    public PointNode getSelectedTile()
     {
         return selectedTile;
     }
     
-    public void setSelectedTile(RoutePoint tile)
+    public void setSelectedTile(PointNode tile)
     {
         selectedTile = tile;
     }

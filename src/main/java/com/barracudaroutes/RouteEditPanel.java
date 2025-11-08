@@ -52,9 +52,8 @@ public class RouteEditPanel extends PluginPanel
     
     private boolean recording = false;
     private Timer recordingTimer;
-    private RoutePoint lastRecordedPoint = null;
+    private PointNode lastRecordedPoint = null;
     private int currentLap = 1;
-    private final java.util.Set<Integer> emptyLaps = new java.util.HashSet<>();
     
     public RouteEditPanel(BarracudaRoutesPlugin plugin, Route route, boolean isNewRoute, Runnable onBack, Runnable onSave, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager)
     {
@@ -226,22 +225,21 @@ public class RouteEditPanel extends PluginPanel
             trialComboBox.setSelectedItem(trialOptions[0]);
         }
         
-        // Initialize currentLap to the highest lap number, or 1 if no points
+        // Initialize currentLap to the highest lap number, or 1 if no lap dividers
         currentLap = 1;
-        for (RoutePoint point : route.getPoints())
+        for (RouteNode node : route.getRoute())
         {
-            if (point.getLap() > currentLap)
+            if (node instanceof LapDividerNode)
             {
-                currentLap = point.getLap();
-            }
-            // Also ensure all points have a valid lap (default to 1 if lap is 0)
-            if (point.getLap() == 0)
-            {
-                point.setLap(1);
+                int lapNum = ((LapDividerNode) node).getLapNumber();
+                if (lapNum > currentLap)
+                {
+                    currentLap = lapNum;
+                }
             }
         }
         
-        // Populate tiles list organized by lap
+        // Populate tiles list - nodes are already in order in the route array
         populateTilesList();
     }
     
@@ -249,39 +247,13 @@ public class RouteEditPanel extends PluginPanel
     {
         listModel.clear();
         
-        // Group points by lap
-        java.util.Map<Integer, java.util.List<RoutePoint>> pointsByLap = new java.util.HashMap<>();
-        for (RoutePoint point : route.getPoints())
+        // Simply add all nodes from the route array in order
+        // Lap dividers are displayed as LapDividerNode objects
+        // Points are displayed as PointNode objects
+        for (RouteNode node : route.getRoute())
         {
-            int lap = point.getLap();
-            pointsByLap.computeIfAbsent(lap, k -> new java.util.ArrayList<>()).add(point);
+            listModel.addElement(node);
         }
-        
-        // Combine laps with tiles and empty laps
-        java.util.Set<Integer> allLaps = new java.util.HashSet<>(pointsByLap.keySet());
-        allLaps.addAll(emptyLaps);
-        
-        // Sort laps and add dividers and tiles
-        java.util.List<Integer> laps = new java.util.ArrayList<>(allLaps);
-        java.util.Collections.sort(laps);
-        
-        for (int lap : laps)
-        {
-            // Add lap divider (as Integer)
-            listModel.addElement(lap);
-            
-            // Add tiles for this lap (if any)
-            if (pointsByLap.containsKey(lap))
-            {
-                for (RoutePoint point : pointsByLap.get(lap))
-                {
-                    listModel.addElement(point);
-                }
-            }
-        }
-        
-        // Remove empty laps that now have tiles
-        emptyLaps.removeAll(pointsByLap.keySet());
         
         // Restore selection if possible
         restoreSelection();
@@ -290,9 +262,9 @@ public class RouteEditPanel extends PluginPanel
     private void updateSelection()
     {
         Object selected = tilesList.getSelectedValue();
-        if (selected instanceof RoutePoint)
+        if (selected instanceof PointNode)
         {
-            RoutePoint point = (RoutePoint) selected;
+            PointNode point = (PointNode) selected;
             routeManager.setSelectedTile(point);
             selectedLap = null;
             actionButtonsPanel.setVisible(true);
@@ -301,9 +273,10 @@ public class RouteEditPanel extends PluginPanel
             editButton.setToolTipText("Edit tile");
             deleteButton.setToolTipText("Delete tile");
         }
-        else if (selected instanceof Integer)
+        else if (selected instanceof LapDividerNode)
         {
-            selectedLap = (Integer) selected;
+            LapDividerNode lapDivider = (LapDividerNode) selected;
+            selectedLap = lapDivider.getLapNumber();
             routeManager.setSelectedTile(null);
             actionButtonsPanel.setVisible(true);
             editButton.setVisible(true); // Can edit lap color
@@ -322,7 +295,7 @@ public class RouteEditPanel extends PluginPanel
     private void restoreSelection()
     {
         // Try to restore selection based on RouteManager or selectedLap
-        RoutePoint selectedTile = routeManager.getSelectedTile();
+        PointNode selectedTile = routeManager.getSelectedTile();
         if (selectedTile != null)
         {
             for (int i = 0; i < listModel.size(); i++)
@@ -382,10 +355,11 @@ public class RouteEditPanel extends PluginPanel
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus)
         {
-            if (value instanceof Integer)
+            if (value instanceof LapDividerNode)
             {
                 // Lap divider - create a panel with label and color indicator
-                int lap = (Integer) value;
+                LapDividerNode lapDivider = (LapDividerNode) value;
+                int lap = lapDivider.getLapNumber();
                 JPanel panel = new JPanel(new BorderLayout());
                 panel.setOpaque(true);
                 
@@ -420,11 +394,11 @@ public class RouteEditPanel extends PluginPanel
                 
                 return panel;
             }
-            else if (value instanceof RoutePoint)
+            else if (value instanceof PointNode)
             {
                 // Tile - use default renderer
                 JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                RoutePoint point = (RoutePoint) value;
+                PointNode point = (PointNode) value;
                 label.setText("(" + point.getX() + ", " + point.getY() + ", " + point.getPlane() + ")");
                 label.setFont(label.getFont().deriveFont(Font.PLAIN));
                 return label;
@@ -438,26 +412,28 @@ public class RouteEditPanel extends PluginPanel
     private void onEditSelected()
     {
         Object selected = tilesList.getSelectedValue();
-        if (selected instanceof RoutePoint)
+        if (selected instanceof PointNode)
         {
-            onEditTile((RoutePoint) selected);
+            onEditTile((PointNode) selected);
         }
-        else if (selected instanceof Integer)
+        else if (selected instanceof LapDividerNode)
         {
-            onEditLap((Integer) selected);
+            LapDividerNode lapDivider = (LapDividerNode) selected;
+            onEditLap(lapDivider.getLapNumber());
         }
     }
     
     private void onDeleteSelected()
     {
         Object selected = tilesList.getSelectedValue();
-        if (selected instanceof RoutePoint)
+        if (selected instanceof PointNode)
         {
-            onDeleteTile((RoutePoint) selected);
+            onDeleteTile((PointNode) selected);
         }
-        else if (selected instanceof Integer)
+        else if (selected instanceof LapDividerNode)
         {
-            onDeleteLap((Integer) selected);
+            LapDividerNode lapDivider = (LapDividerNode) selected;
+            onDeleteLap(lapDivider.getLapNumber());
         }
     }
     
@@ -504,10 +480,11 @@ public class RouteEditPanel extends PluginPanel
             return;
         }
         
-        // Clear existing tiles and reset to lap 1
-        route.getPoints().clear();
-        emptyLaps.clear();
+        // Clear existing route and reset to lap 1
+        route.getRoute().clear();
         currentLap = 1;
+        // Add initial lap divider for lap 1
+        route.addNode(new LapDividerNode(1));
         populateTilesList();
         
         recording = true;
@@ -531,7 +508,7 @@ public class RouteEditPanel extends PluginPanel
             int x = plugin.getClient().getLocalPlayer().getWorldLocation().getX();
             int y = plugin.getClient().getLocalPlayer().getWorldLocation().getY();
             int plane = plugin.getClient().getPlane();
-            RoutePoint newPoint = new RoutePoint(x, y, plane, currentLap);
+            PointNode newPoint = new PointNode(x, y, plane);
             
             // Only add if player moved (avoid duplicate points)
             if (lastRecordedPoint == null || 
@@ -539,16 +516,51 @@ public class RouteEditPanel extends PluginPanel
                 lastRecordedPoint.getY() != y || 
                 lastRecordedPoint.getPlane() != plane)
             {
-                route.addPoint(newPoint);
+                // Ensure current lap divider exists
+                ensureLapDividerExists(currentLap);
+                route.addNode(newPoint);
                 lastRecordedPoint = newPoint;
-                // Remove from empty laps since we're adding a tile
                 routeManager.updateRoute(route);
-                emptyLaps.remove(currentLap);
                 // Update tiles list
                 populateTilesList();
             }
         });
         recordingTimer.start();
+    }
+    
+    /**
+     * Ensure a lap divider exists for the given lap number
+     * If it doesn't exist, add it at the appropriate position
+     */
+    private void ensureLapDividerExists(int lap)
+    {
+        java.util.List<RouteNode> routeNodes = route.getRoute();
+        boolean hasLapDivider = false;
+        int insertIndex = 0;
+        
+        // Find if lap divider exists and where to insert if it doesn't
+        for (int i = 0; i < routeNodes.size(); i++)
+        {
+            RouteNode node = routeNodes.get(i);
+            if (node instanceof LapDividerNode)
+            {
+                LapDividerNode lapDivider = (LapDividerNode) node;
+                if (lapDivider.getLapNumber() == lap)
+                {
+                    hasLapDivider = true;
+                    break;
+                }
+                if (lapDivider.getLapNumber() < lap)
+                {
+                    insertIndex = i + 1;
+                }
+            }
+        }
+        
+        if (!hasLapDivider)
+        {
+            routeNodes.add(insertIndex, new LapDividerNode(lap));
+        }
     }
     
     private void onStopRecord()
@@ -579,9 +591,10 @@ public class RouteEditPanel extends PluginPanel
         int x = plugin.getClient().getLocalPlayer().getWorldLocation().getX();
         int y = plugin.getClient().getLocalPlayer().getWorldLocation().getY();
         int plane = plugin.getClient().getPlane();
-        route.addPoint(new RoutePoint(x, y, plane, currentLap));
-        // Remove from empty laps since we're adding a tile
-        emptyLaps.remove(currentLap);
+        
+        // Ensure current lap divider exists
+        ensureLapDividerExists(currentLap);
+        route.addNode(new PointNode(x, y, plane));
         routeManager.updateRoute(route);
         populateTilesList();
     }
@@ -590,23 +603,21 @@ public class RouteEditPanel extends PluginPanel
     {
         // Find the highest lap number
         int maxLap = 1;
-        for (RoutePoint point : route.getPoints())
+        for (RouteNode node : route.getRoute())
         {
-            if (point.getLap() > maxLap)
+            if (node instanceof LapDividerNode)
             {
-                maxLap = point.getLap();
-            }
-        }
-        if (!emptyLaps.isEmpty())
-        {
-            int maxEmptyLap = java.util.Collections.max(emptyLaps);
-            if (maxEmptyLap > maxLap)
-            {
-                maxLap = maxEmptyLap;
+                int lapNum = ((LapDividerNode) node).getLapNumber();
+                if (lapNum > maxLap)
+                {
+                    maxLap = lapNum;
+                }
             }
         }
         currentLap = maxLap + 1;
-        emptyLaps.add(currentLap);
+        // Add new lap divider at the end
+        route.addNode(new LapDividerNode(currentLap));
+        routeManager.updateRoute(route);
         populateTilesList();
     }
     
@@ -626,10 +637,36 @@ public class RouteEditPanel extends PluginPanel
             return;
         }
         
-        // Remove all tiles in this lap
-        route.getPoints().removeIf(point -> point.getLap() == lap);
-        // Remove from empty laps if it was empty
-        emptyLaps.remove(lap);
+        // Find and remove the lap divider and all point nodes until the next lap divider
+        java.util.List<RouteNode> routeNodes = route.getRoute();
+        java.util.List<RouteNode> toRemove = new java.util.ArrayList<>();
+        boolean foundLapDivider = false;
+        
+        for (int i = 0; i < routeNodes.size(); i++)
+        {
+            RouteNode node = routeNodes.get(i);
+            if (node instanceof LapDividerNode)
+            {
+                LapDividerNode lapDivider = (LapDividerNode) node;
+                if (lapDivider.getLapNumber() == lap)
+                {
+                    foundLapDivider = true;
+                    toRemove.add(node);
+                }
+                else if (foundLapDivider)
+                {
+                    // Reached next lap divider, stop removing
+                    break;
+                }
+            }
+            else if (foundLapDivider && node instanceof PointNode)
+            {
+                // Remove all point nodes after the lap divider until next lap divider
+                toRemove.add(node);
+            }
+        }
+        
+        routeNodes.removeAll(toRemove);
         routeManager.setSelectedTile(null);
         selectedLap = null;
         
@@ -643,7 +680,7 @@ public class RouteEditPanel extends PluginPanel
         populateTilesList();
     }
     
-    private void onDeleteTile(RoutePoint point)
+    private void onDeleteTile(PointNode point)
     {
         if (point == null)
         {
@@ -664,14 +701,14 @@ public class RouteEditPanel extends PluginPanel
             return;
         }
         
-        route.getPoints().remove(point);
+        route.getRoute().remove(point);
         routeManager.setSelectedTile(null);
         selectedLap = null;
         routeManager.updateRoute(route);
         populateTilesList();
     }
     
-    private void onEditTile(RoutePoint point)
+    private void onEditTile(PointNode point)
     {
         if (point == null)
         {
@@ -762,6 +799,7 @@ public class RouteEditPanel extends PluginPanel
                     restoreSelection();
                 }
                 
+                routeManager.updateRoute(route);
                 dialog.dispose();
             }
             catch (NumberFormatException ex)
@@ -882,110 +920,40 @@ public class RouteEditPanel extends PluginPanel
             try
             {
                 TileTransferable transferable = (TileTransferable) support.getTransferable().getTransferData(TileTransferable.TILE_DATA_FLAVOR);
-                Object draggedItem = transferable.getValue();
+                int sourceIndex = transferable.getIndex();
                 
                 JList.DropLocation dropLocation = (JList.DropLocation) support.getDropLocation();
                 int dropIndex = dropLocation.getIndex();
                 
-                // Determine target lap
-                int targetLap = 1;
-                
-                // If dropping on an item, get its lap
-                if (dropIndex < listModel.size() && dropIndex >= 0)
+                // Adjust drop index if dragging from above
+                if (sourceIndex < dropIndex)
                 {
-                    Object targetItem = listModel.get(dropIndex);
-                    if (targetItem instanceof Integer)
-                    {
-                        targetLap = (Integer) targetItem;
-                    }
-                    else if (targetItem instanceof RoutePoint)
-                    {
-                        targetLap = ((RoutePoint) targetItem).getLap();
-                    }
-                }
-                // If dropping at the end, use the last item's lap or 1
-                else if (listModel.size() > 0)
-                {
-                    Object lastItem = listModel.get(listModel.size() - 1);
-                    if (lastItem instanceof Integer)
-                    {
-                        targetLap = (Integer) lastItem;
-                    }
-                    else if (lastItem instanceof RoutePoint)
-                    {
-                        targetLap = ((RoutePoint) lastItem).getLap();
-                    }
+                    dropIndex--;
                 }
                 
-                // Handle dragging lap dividers
-                if (draggedItem instanceof Integer)
+                java.util.List<RouteNode> routeNodes = route.getRoute();
+                
+                // Remove from source position
+                RouteNode draggedNode = routeNodes.remove(sourceIndex);
+                
+                // Insert at drop location
+                routeNodes.add(dropIndex, draggedNode);
+                
+                // If dragging a lap divider, we might need to update lap numbers
+                // For now, just move it - the structure handles lap assignment by position
+                
+                routeManager.updateRoute(route);
+                // Refresh the list
+                populateTilesList();
+                
+                // Update selection
+                if (draggedNode instanceof PointNode)
                 {
-                    int draggedLap = (Integer) draggedItem;
-                    
-                    // Get all tiles in the dragged lap
-                    java.util.List<RoutePoint> tilesInLap = new java.util.ArrayList<>();
-                    for (RoutePoint point : route.getPoints())
-                    {
-                        if (point.getLap() == draggedLap)
-                        {
-                            tilesInLap.add(point);
-                        }
-                    }
-                    
-                    // Remove all tiles in the dragged lap
-                    route.getPoints().removeAll(tilesInLap);
-                    
-                    // Update all tiles in the dragged lap to the target lap
-                    for (RoutePoint point : tilesInLap)
-                    {
-                        point.setLap(targetLap);
-                    }
-                    
-                    // Re-insert tiles
-                    route.getPoints().addAll(tilesInLap);
-                    
-                    routeManager.updateRoute(route);
-                    // Refresh the list
-                    populateTilesList();
-                    
-                    return true;
+                    routeManager.setSelectedTile((PointNode) draggedNode);
                 }
-                // Handle dragging tiles
-                else if (draggedItem instanceof RoutePoint)
-                {
-                    RoutePoint tile = (RoutePoint) draggedItem;
-                    
-                    // Update the tile's lap
-                    tile.setLap(targetLap);
-                    
-                    // Remove from old position
-                    route.getPoints().remove(tile);
-                    
-                    // Re-insert at the end of the target lap
-                    int insertIndex = 0;
-                    for (RoutePoint p : route.getPoints())
-                    {
-                        if (p.getLap() <= targetLap)
-                        {
-                            insertIndex++;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    route.getPoints().add(insertIndex, tile);
-                    
-                    routeManager.updateRoute(route);
-                    // Refresh the list
-                    populateTilesList();
-                    
-                    // Update selection
-                    routeManager.setSelectedTile(tile);
-                    restoreSelection();
-                    
-                    return true;
-                }
+                restoreSelection();
+                
+                return true;
             }
             catch (Exception e)
             {
@@ -1001,15 +969,22 @@ public class RouteEditPanel extends PluginPanel
     {
         private static final DataFlavor TILE_DATA_FLAVOR = new DataFlavor(Object.class, "Tile/Lap Item");
         private final Object value;
+        private final int index;
         
         public TileTransferable(Object value, int index)
         {
             this.value = value;
+            this.index = index;
         }
         
         public Object getValue()
         {
             return value;
+        }
+        
+        public int getIndex()
+        {
+            return index;
         }
         
         @Override

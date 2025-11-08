@@ -9,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 
 import net.runelite.client.RuneLite;
@@ -24,9 +23,7 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -67,35 +64,63 @@ public class RoutePersistenceManager
         }
     }
     
-    // Custom serializer/deserializer for Map<Integer, Color>
-    private static class LapColorsAdapter implements JsonSerializer<Map<Integer, Color>>, JsonDeserializer<Map<Integer, Color>>
+    // Custom serializer/deserializer for RouteNode
+    private static class RouteNodeAdapter implements JsonSerializer<RouteNode>, JsonDeserializer<RouteNode>
     {
         private final ColorAdapter colorAdapter = new ColorAdapter();
         
         @Override
-        public JsonElement serialize(Map<Integer, Color> src, Type typeOfSrc, JsonSerializationContext context)
+        public JsonElement serialize(RouteNode src, Type typeOfSrc, JsonSerializationContext context)
         {
             JsonObject obj = new JsonObject();
-            for (Map.Entry<Integer, Color> entry : src.entrySet())
+            obj.addProperty("type", src.getType());
+            
+            if (src instanceof PointNode)
             {
-                obj.add(entry.getKey().toString(), colorAdapter.serialize(entry.getValue(), Color.class, context));
+                PointNode point = (PointNode) src;
+                obj.addProperty("x", point.getX());
+                obj.addProperty("y", point.getY());
+                obj.addProperty("plane", point.getPlane());
             }
+            else if (src instanceof LapDividerNode)
+            {
+                LapDividerNode lapDivider = (LapDividerNode) src;
+                obj.addProperty("lapNumber", lapDivider.getLapNumber());
+                if (lapDivider.getColor() != null)
+                {
+                    obj.add("color", colorAdapter.serialize(lapDivider.getColor(), Color.class, context));
+                }
+            }
+            
             return obj;
         }
         
         @Override
-        public Map<Integer, Color> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+        public RouteNode deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
                 throws JsonParseException
         {
-            Map<Integer, Color> map = new HashMap<>();
             JsonObject obj = json.getAsJsonObject();
-            for (Map.Entry<String, JsonElement> entry : obj.entrySet())
+            String type = obj.get("type").getAsString();
+            
+            if ("point".equals(type))
             {
-                int lap = Integer.parseInt(entry.getKey());
-                Color color = colorAdapter.deserialize(entry.getValue(), Color.class, context);
-                map.put(lap, color);
+                int x = obj.get("x").getAsInt();
+                int y = obj.get("y").getAsInt();
+                int plane = obj.get("plane").getAsInt();
+                return new PointNode(x, y, plane);
             }
-            return map;
+            else if ("lapDivider".equals(type))
+            {
+                int lapNumber = obj.get("lapNumber").getAsInt();
+                Color color = null;
+                if (obj.has("color"))
+                {
+                    color = colorAdapter.deserialize(obj.get("color"), Color.class, context);
+                }
+                return new LapDividerNode(lapNumber, color);
+            }
+            
+            throw new JsonParseException("Unknown route node type: " + type);
         }
     }
     
@@ -105,7 +130,7 @@ public class RoutePersistenceManager
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting();
         builder.registerTypeAdapter(Color.class, new ColorAdapter());
-        builder.registerTypeAdapter(new TypeToken<Map<Integer, Color>>(){}.getType(), new LapColorsAdapter());
+        builder.registerTypeAdapter(RouteNode.class, new RouteNodeAdapter());
         this.gson = builder.create();
     }
     
