@@ -110,7 +110,9 @@ public class RouteEditPanel extends PluginPanel
         buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.Y_AXIS));
         buttonsPanel.add(recordButton);
         buttonsPanel.add(stopRecordButton);
+        buttonsPanel.add(Box.createVerticalStrut(2));
         buttonsPanel.add(addTileButton);
+        buttonsPanel.add(Box.createVerticalStrut(2));
         buttonsPanel.add(newLapButton);
         
         // Wrap in a panel with BorderLayout to align to the left
