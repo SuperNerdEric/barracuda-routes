@@ -1,5 +1,9 @@
-package com.barracudaroutes;
+package com.barracudaroutes.managers;
 
+import com.barracudaroutes.BarracudaRoutesConfig;
+import com.barracudaroutes.model.routenodes.PointNode;
+import com.barracudaroutes.model.Route;
+import com.barracudaroutes.model.routenodes.RouteNode;
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.config.ConfigManager;

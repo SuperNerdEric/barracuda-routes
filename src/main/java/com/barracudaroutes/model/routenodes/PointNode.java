@@ -1,23 +1,25 @@
-package com.barracudaroutes;
+package com.barracudaroutes.model.routenodes;
 
-public class RoutePoint
+/**
+ * Represents a point in the route
+ */
+public class PointNode implements RouteNode
 {
     private int x;
     private int y;
     private int plane;
-    private int lap;
 
-    public RoutePoint(int x, int y, int plane)
-    {
-        this(x, y, plane, 1);
-    }
-
-    public RoutePoint(int x, int y, int plane, int lap)
+    public PointNode(int x, int y, int plane)
     {
         this.x = x;
         this.y = y;
         this.plane = plane;
-        this.lap = lap;
+    }
+
+    @Override
+    public String getType()
+    {
+        return "point";
     }
 
     public int getX()
@@ -49,14 +51,5 @@ public class RoutePoint
     {
         this.plane = plane;
     }
-
-    public int getLap()
-    {
-        return lap;
-    }
-
-    public void setLap(int lap)
-    {
-        this.lap = lap;
-    }
 }
+

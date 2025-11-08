@@ -1,4 +1,4 @@
-package com.barracudaroutes;
+package com.barracudaroutes.model.routenodes;
 
 import java.awt.Color;
 

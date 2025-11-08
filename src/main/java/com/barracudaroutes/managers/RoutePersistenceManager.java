@@ -1,5 +1,9 @@
-package com.barracudaroutes;
+package com.barracudaroutes.managers;
 
+import com.barracudaroutes.model.routenodes.LapDividerNode;
+import com.barracudaroutes.model.routenodes.PointNode;
+import com.barracudaroutes.model.Route;
+import com.barracudaroutes.model.routenodes.RouteNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;

@@ -1,4 +1,7 @@
-package com.barracudaroutes;
+package com.barracudaroutes.managers;
+
+import com.barracudaroutes.model.routenodes.PointNode;
+import com.barracudaroutes.model.Route;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

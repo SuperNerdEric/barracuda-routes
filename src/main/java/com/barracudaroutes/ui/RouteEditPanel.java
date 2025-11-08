@@ -1,5 +1,11 @@
-package com.barracudaroutes;
+package com.barracudaroutes.ui;
 
+import com.barracudaroutes.*;
+import com.barracudaroutes.managers.RouteManager;
+import com.barracudaroutes.model.routenodes.LapDividerNode;
+import com.barracudaroutes.model.routenodes.PointNode;
+import com.barracudaroutes.model.Route;
+import com.barracudaroutes.model.routenodes.RouteNode;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;

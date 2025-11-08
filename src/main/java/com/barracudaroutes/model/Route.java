@@ -1,4 +1,8 @@
-package com.barracudaroutes;
+package com.barracudaroutes.model;
+
+import com.barracudaroutes.model.routenodes.LapDividerNode;
+import com.barracudaroutes.model.routenodes.PointNode;
+import com.barracudaroutes.model.routenodes.RouteNode;
 
 import java.awt.Color;
 import java.util.ArrayList;

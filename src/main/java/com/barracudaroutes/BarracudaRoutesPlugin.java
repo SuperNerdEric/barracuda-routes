@@ -1,5 +1,9 @@
 package com.barracudaroutes;
 
+import com.barracudaroutes.managers.RouteManager;
+import com.barracudaroutes.managers.RouteVisibilityManager;
+import com.barracudaroutes.ui.BarracudaRoutesPanel;
+import com.barracudaroutes.ui.RouteOverlay;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.client.config.ConfigManager;
