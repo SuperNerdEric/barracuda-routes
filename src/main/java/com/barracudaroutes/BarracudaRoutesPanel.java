@@ -31,11 +31,13 @@ public class BarracudaRoutesPanel extends PluginPanel
     
     private static final ImageIcon EDIT_ICON;
     private static final ImageIcon DELETE_ICON;
+    private static final ImageIcon BOAT_ICON;
     
     static
     {
         EDIT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/edit.png"));
         DELETE_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/delete.png"));
+        BOAT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/boat.png"));
     }
 
     public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager)
@@ -47,10 +49,19 @@ public class BarracudaRoutesPanel extends PluginPanel
         // Set up main panel
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         JPanel top = new JPanel();
-        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+        top.setLayout(new BorderLayout());
         top.setAlignmentX(Component.LEFT_ALIGNMENT); // Explicitly align to left
         top.setMaximumSize(new Dimension(300, 200));
-        top.add(createButton);
+        
+        // Create button panel with icon to the right
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.add(createButton);
+        buttonPanel.add(Box.createHorizontalStrut(8)); // Add spacing between button and icon
+        JLabel boatLabel = new JLabel(BOAT_ICON);
+        buttonPanel.add(boatLabel);
+        
+        top.add(buttonPanel, BorderLayout.WEST);
         top.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the button
         // Set preferred size after adding components to prevent shifting when other components change
         top.setPreferredSize(new Dimension(300, top.getPreferredSize().height));
