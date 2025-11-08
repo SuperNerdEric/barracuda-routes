@@ -41,12 +41,16 @@ public class BarracudaRoutesPanel extends PluginPanel
     private static final ImageIcon EDIT_ICON;
     private static final ImageIcon DELETE_ICON;
     private static final ImageIcon BOAT_ICON;
+    private static final ImageIcon IMPORT_ICON;
+    private static final ImageIcon EXPORT_ICON;
     
     static
     {
         EDIT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/edit.png"));
         DELETE_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/delete.png"));
         BOAT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/boat.png"));
+        IMPORT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/import.png"));
+        EXPORT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/export.png"));
     }
 
     public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager, RouteImportExportManager importExportManager)
@@ -73,10 +77,9 @@ public class BarracudaRoutesPanel extends PluginPanel
         titlePanel.add(titleLabel, BorderLayout.WEST);
         
         // Import button on the right
-        importButton = new JButton("Import");
-        importButton.addActionListener(e -> onImport());
+        importButton = createButton(IMPORT_ICON, "Import route", () -> onImport());
         titlePanel.add(importButton, BorderLayout.EAST);
-        
+
         mainPanel.add(titlePanel);
         
         JPanel top = new JPanel();
@@ -107,16 +110,15 @@ public class BarracudaRoutesPanel extends PluginPanel
         // Action buttons panel (export/edit/delete) - initially hidden
         actionButtonsPanel = new JPanel();
         actionButtonsPanel.setLayout(new BoxLayout(actionButtonsPanel, BoxLayout.X_AXIS));
-        exportButton = new JButton("Export");
-        exportButton.addActionListener(e -> onExportSelected());
+        exportButton = createButton(EXPORT_ICON, "Export route", () -> onExportSelected());
         editButton = createButton(EDIT_ICON, "Edit route", () -> onEditSelected());
         deleteButton = createButton(DELETE_ICON, "Delete route", () -> onDeleteSelected());
         actionButtonsPanel.add(exportButton);
         actionButtonsPanel.add(editButton);
         actionButtonsPanel.add(deleteButton);
         // Set fixed size to prevent layout shifts
-        actionButtonsPanel.setPreferredSize(new Dimension(120, 24));
-        actionButtonsPanel.setMaximumSize(new Dimension(120, 24));
+        actionButtonsPanel.setPreferredSize(new Dimension(90, 24));
+        actionButtonsPanel.setMaximumSize(new Dimension(90, 24));
         actionButtonsPanel.setVisible(false);
         routesHeaderPanel.add(actionButtonsPanel, BorderLayout.EAST);
         mainPanel.add(routesHeaderPanel);
