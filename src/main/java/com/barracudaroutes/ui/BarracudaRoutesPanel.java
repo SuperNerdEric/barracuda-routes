@@ -115,7 +115,11 @@ public class BarracudaRoutesPanel extends PluginPanel
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    onEditSelected();
+                    Object selected = routesList.getSelectedValue();
+                    // Only allow editing routes, not empty markers or trial headers
+                    if (selected instanceof Route) {
+                        onEditSelected();
+                    }
                 }
             }
         });
@@ -163,12 +167,17 @@ public class BarracudaRoutesPanel extends PluginPanel
             listModel.addElement(trialName);
             
             // Add routes for this trial (if any)
-            if (routesByTrial.containsKey(trialName))
+            if (routesByTrial.containsKey(trialName) && !routesByTrial.get(trialName).isEmpty())
             {
                 for (Route route : routesByTrial.get(trialName))
                 {
                     listModel.addElement(route);
                 }
+            }
+            else
+            {
+                // Add "No routes yet" marker for empty trials
+                listModel.addElement(new EmptyTrialMarker());
             }
         }
     }
@@ -191,6 +200,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         {
             startEditing((Route) selected);
         }
+        // Ignore EmptyTrialMarker and String (trial headers)
     }
     
     private void onDeleteSelected()
@@ -200,6 +210,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         {
             onDelete((Route) selected);
         }
+        // Ignore EmptyTrialMarker and String (trial headers)
     }
 
     private void onDelete(Route route)
@@ -224,14 +235,20 @@ public class BarracudaRoutesPanel extends PluginPanel
     private void updateSelection()
     {
         Object selected = routesList.getSelectedValue();
-            if (selected instanceof Route)
-            {
-                routeManager.setActiveRoute((Route) selected);
+        if (selected instanceof Route)
+        {
+            routeManager.setActiveRoute((Route) selected);
             actionButtonsPanel.setVisible(true);
         }
         else
         {
+            // Don't show action buttons for trial headers or empty markers
             actionButtonsPanel.setVisible(false);
+            // Clear selection if it's not a route
+            if (selected instanceof EmptyTrialMarker || selected instanceof String)
+            {
+                routesList.clearSelection();
+            }
         }
     }
     
@@ -258,8 +275,33 @@ public class BarracudaRoutesPanel extends PluginPanel
                 label.setText("  " + route.getName()); // Indent routes under their trial
                 label.setFont(label.getFont().deriveFont(Font.PLAIN));
             }
+            else if (value instanceof EmptyTrialMarker)
+            {
+                // Empty trial marker
+                label.setText("  No routes yet");
+                label.setFont(label.getFont().deriveFont(Font.PLAIN));
+                label.setForeground(Color.GRAY);
+                // Make it non-selectable by preventing selection styling
+                if (isSelected)
+                {
+                    label.setBackground(list.getBackground());
+                    label.setForeground(Color.GRAY);
+                }
+            }
             
             return label;
+        }
+    }
+    
+    /**
+     * Marker class for empty trial sections - cannot be selected, edited, or deleted
+     */
+    private static class EmptyTrialMarker
+    {
+        @Override
+        public String toString()
+        {
+            return "No routes yet";
         }
     }
 
