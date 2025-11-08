@@ -275,6 +275,9 @@ public class BarracudaRoutesPanel extends PluginPanel
         // Activate the route so it shows in the overlay
         RouteManager.setActiveRoute(route);
         
+        // Set edit mode flag
+        RouteManager.setInEditMode(true);
+        
         // Select the route in the list
         int index = listModel.indexOf(route);
         if (index >= 0)
@@ -296,6 +299,10 @@ public class BarracudaRoutesPanel extends PluginPanel
             cardPanel.remove(editPanel);
             editPanel = null;
         }
+        
+        // Clear edit mode flag
+        RouteManager.setInEditMode(false);
+        
         updateSelection();
         cardLayout.show(cardPanel, "MAIN");
         // Revalidate and repaint to fix layout issues

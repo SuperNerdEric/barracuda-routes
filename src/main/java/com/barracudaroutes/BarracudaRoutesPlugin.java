@@ -10,6 +10,8 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.api.events.GameTick;
+import net.runelite.client.eventbus.Subscribe;
 
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -37,6 +39,9 @@ public class BarracudaRoutesPlugin extends Plugin
 
 	@Inject
 	private net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager;
+
+	@Inject
+	private RouteVisibilityManager routeVisibilityManager;
 
 	private BarracudaRoutesPanel panel;
 	private NavigationButton navButton;
@@ -67,5 +72,13 @@ public class BarracudaRoutesPlugin extends Plugin
 	public Client getClient()
 	{
 		return client;
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick gameTick)
+	{
+		// Update route visibility manager on each game tick
+		// Only works when not in edit mode (checked inside the manager)
+		routeVisibilityManager.update();
 	}
 }

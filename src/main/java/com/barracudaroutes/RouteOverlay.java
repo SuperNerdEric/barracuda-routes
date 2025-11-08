@@ -13,15 +13,18 @@ import net.runelite.api.Perspective;
 
 import java.awt.*;
 import java.util.List;
+import java.util.Set;
 
 public class RouteOverlay extends Overlay
 {
     private final Client client;
+    private final RouteVisibilityManager visibilityManager;
 
     @Inject
-    public RouteOverlay(Client client)
+    public RouteOverlay(Client client, RouteVisibilityManager visibilityManager)
     {
         this.client = client;
+        this.visibilityManager = visibilityManager;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
@@ -64,11 +67,23 @@ public class RouteOverlay extends Overlay
         {
             return null;
         }
+        
+        // Get visible tile indices from visibility manager
+        Set<Integer> visibleIndices = visibilityManager.getVisibleTileIndices();
+        
         g.setStroke(new BasicStroke(3.0f));
         Point prev = null;
         
-        for (RoutePoint rp : pts)
+        for (int i = 0; i < pts.size(); i++)
         {
+            // Skip if tile is not visible
+            if (!visibleIndices.contains(i))
+            {
+                prev = null; // Break the line when skipping tiles
+                continue;
+            }
+            
+            RoutePoint rp = pts.get(i);
             WorldPoint wp = new WorldPoint(rp.getX(), rp.getY(), rp.getPlane());
             LocalPoint lp = LocalPoint.fromWorld(client, wp.getX(), wp.getY());
             if (lp == null)

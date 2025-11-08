@@ -8,6 +8,7 @@ public class RouteManager
     private static final List<Route> routes = new ArrayList<>();
     private static Route active = null;
     private static RoutePoint selectedTile = null;
+    private static boolean inEditMode = false;
 
     public static void initDefaultRoutes()
     {
@@ -56,5 +57,15 @@ public class RouteManager
     public static void setSelectedTile(RoutePoint tile)
     {
         selectedTile = tile;
+    }
+    
+    public static boolean isInEditMode()
+    {
+        return inEditMode;
+    }
+    
+    public static void setInEditMode(boolean inEditMode)
+    {
+        RouteManager.inEditMode = inEditMode;
     }
 }
