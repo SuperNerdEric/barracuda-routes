@@ -69,6 +69,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         titlePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         titlePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30)); // Constrain height to prevent layout shifts
         titlePanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 30));
+        titlePanel.setBorder(new EmptyBorder(0, 0, 8, 0));
         
         JLabel titleLabel = new JLabel("Barracuda Routes");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
