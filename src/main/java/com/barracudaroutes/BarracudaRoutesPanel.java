@@ -14,6 +14,7 @@ public class BarracudaRoutesPanel extends PluginPanel
 {
     private final BarracudaRoutesPlugin plugin;
     private final net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager;
+    private final RouteManager routeManager;
     private final JButton createButton = new JButton("Create route");
     
     // Card layout for switching between main and edit panels
@@ -40,10 +41,11 @@ public class BarracudaRoutesPanel extends PluginPanel
         BOAT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/boat.png"));
     }
 
-    public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager)
+    public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager)
     {
         this.plugin = plugin;
         this.colorPickerManager = colorPickerManager;
+        this.routeManager = routeManager;
         setLayout(new BorderLayout());
         
         // Set up main panel
@@ -141,7 +143,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         
         // Group routes by trial
         java.util.Map<String, java.util.List<Route>> routesByTrial = new java.util.HashMap<>();
-        for (Route route : RouteManager.getAllRoutes())
+        for (Route route : routeManager.getAllRoutes())
         {
             String trialName = route.getTrialName();
             if (trialName == null || trialName.isEmpty())
@@ -172,7 +174,7 @@ public class BarracudaRoutesPanel extends PluginPanel
     {
         // Create a new route immediately
         Route newRoute = new Route("", "", "The Tempor Tantrum");
-        RouteManager.addRoute(newRoute);
+        routeManager.addRoute(newRoute);
         populateRoutesList();
         
         // Switch to edit panel
@@ -205,13 +207,13 @@ public class BarracudaRoutesPanel extends PluginPanel
             return;
         }
         
-        RouteManager.removeRoute(route);
+        routeManager.removeRoute(route);
         populateRoutesList();
         
         // Clear selection if the deleted route was selected
-        if (RouteManager.getActiveRoute() == route)
+        if (routeManager.getActiveRoute() == route)
         {
-            RouteManager.setActiveRoute(null);
+            routeManager.setActiveRoute(null);
             routesList.clearSelection();
         }
     }
@@ -219,9 +221,9 @@ public class BarracudaRoutesPanel extends PluginPanel
     private void updateSelection()
     {
         Object selected = routesList.getSelectedValue();
-        if (selected instanceof Route)
-        {
-            RouteManager.setActiveRoute((Route) selected);
+            if (selected instanceof Route)
+            {
+                routeManager.setActiveRoute((Route) selected);
             actionButtonsPanel.setVisible(true);
         }
         else
@@ -273,10 +275,10 @@ public class BarracudaRoutesPanel extends PluginPanel
         }
         
         // Activate the route so it shows in the overlay
-        RouteManager.setActiveRoute(route);
+        routeManager.setActiveRoute(route);
         
         // Set edit mode flag
-        RouteManager.setInEditMode(true);
+        routeManager.setInEditMode(true);
         
         // Select the route in the list
         int index = listModel.indexOf(route);
@@ -286,7 +288,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         }
         
         // Create new edit panel
-        editPanel = new RouteEditPanel(plugin, route, isNew, this::showMainPanel, this::onEditSave, colorPickerManager);
+        editPanel = new RouteEditPanel(plugin, route, isNew, this::showMainPanel, this::onEditSave, colorPickerManager, routeManager);
         cardPanel.add(editPanel, "EDIT");
         cardLayout.show(cardPanel, "EDIT");
     }
@@ -301,7 +303,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         }
         
         // Clear edit mode flag
-        RouteManager.setInEditMode(false);
+        routeManager.setInEditMode(false);
         
         updateSelection();
         cardLayout.show(cardPanel, "MAIN");
@@ -318,7 +320,7 @@ public class BarracudaRoutesPanel extends PluginPanel
         if (editPanel != null && editPanel.route != null)
         {
             // If route was removed (new route without name), remove from list
-            if (!RouteManager.getAllRoutes().contains(editPanel.route))
+            if (!routeManager.getAllRoutes().contains(editPanel.route))
             {
                 populateRoutesList();
             }

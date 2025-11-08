@@ -42,6 +42,9 @@ public class BarracudaRoutesPlugin extends Plugin
 
 	@Inject
 	private RouteVisibilityManager routeVisibilityManager;
+	
+	@Inject
+	private RouteManager routeManager;
 
 	private BarracudaRoutesPanel panel;
 	private NavigationButton navButton;
@@ -49,8 +52,9 @@ public class BarracudaRoutesPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		RouteManager.initDefaultRoutes();
-		panel = new BarracudaRoutesPanel(this, colorPickerManager);
+		// Load routes from disk
+		routeManager.loadRoutes();
+		panel = new BarracudaRoutesPanel(this, colorPickerManager, routeManager);
 		navButton = NavigationButton.builder()
 				.tooltip("Barracuda Routes")
 				.icon(ImageUtil.loadImageResource(getClass(), "/barracuda_icon.png"))

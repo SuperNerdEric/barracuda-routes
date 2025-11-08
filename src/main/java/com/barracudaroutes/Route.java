@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class Route
 {
@@ -13,6 +14,7 @@ public class Route
     private String trialName;
     private final List<RoutePoint> points = new ArrayList<>();
     private final Map<Integer, Color> lapColors = new HashMap<>(); // Custom colors per lap
+    private UUID fileUuid; // UUID used in filename for persistence
 
     public Route(String name, String description, String trialName)
     {
@@ -81,6 +83,16 @@ public class Route
     public Color getLapColor(int lap)
     {
         return lapColors.get(lap);
+    }
+    
+    public UUID getFileUuid()
+    {
+        return fileUuid;
+    }
+    
+    public void setFileUuid(UUID fileUuid)
+    {
+        this.fileUuid = fileUuid;
     }
 
     @Override

@@ -1,71 +1,94 @@
 package com.barracudaroutes;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+@Singleton
 public class RouteManager
 {
-    private static final List<Route> routes = new ArrayList<>();
-    private static Route active = null;
-    private static RoutePoint selectedTile = null;
-    private static boolean inEditMode = false;
-
-    public static void initDefaultRoutes()
+    private final List<Route> routes = new ArrayList<>();
+    private Route active = null;
+    private RoutePoint selectedTile = null;
+    private boolean inEditMode = false;
+    
+    private final RoutePersistenceManager persistenceManager;
+    
+    @Inject
+    public RouteManager(RoutePersistenceManager persistenceManager)
     {
-        Route r1 = new Route("Example route", "", "The Tempor Tantrum");
-        r1.addPoint(new RoutePoint(3001, 3230, 0));
-        r1.addPoint(new RoutePoint(3003, 3230, 0));
-        r1.addPoint(new RoutePoint(3003, 3232, 0));
-        r1.addPoint(new RoutePoint(3001, 3232, 0));
-        routes.add(r1);
+        this.persistenceManager = persistenceManager;
+    }
+    
+    /**
+     * Load all routes from disk
+     */
+    public void loadRoutes()
+    {
+        routes.clear();
+        routes.addAll(persistenceManager.loadAllRoutes());
     }
 
-    public static List<Route> getAllRoutes()
+    public List<Route> getAllRoutes()
     {
         return new ArrayList<>(routes);
     }
 
-    public static void addRoute(Route r)
+    public void addRoute(Route r)
     {
         routes.add(r);
+        // Save to disk
+        persistenceManager.saveRoute(r);
     }
 
-    public static void removeRoute(Route r)
+    public void removeRoute(Route r)
     {
         routes.remove(r);
         if (active == r)
         {
             active = null;
         }
+        // Delete from disk
+        persistenceManager.deleteRoute(r);
+    }
+    
+    /**
+     * Update a route (save to disk)
+     */
+    public void updateRoute(Route r)
+    {
+        // Save to disk
+        persistenceManager.saveRoute(r);
     }
 
-    public static Route getActiveRoute()
+    public Route getActiveRoute()
     {
         return active;
     }
 
-    public static void setActiveRoute(Route r)
+    public void setActiveRoute(Route r)
     {
         active = r;
     }
     
-    public static RoutePoint getSelectedTile()
+    public RoutePoint getSelectedTile()
     {
         return selectedTile;
     }
     
-    public static void setSelectedTile(RoutePoint tile)
+    public void setSelectedTile(RoutePoint tile)
     {
         selectedTile = tile;
     }
     
-    public static boolean isInEditMode()
+    public boolean isInEditMode()
     {
         return inEditMode;
     }
     
-    public static void setInEditMode(boolean inEditMode)
+    public void setInEditMode(boolean inEditMode)
     {
-        RouteManager.inEditMode = inEditMode;
+        this.inEditMode = inEditMode;
     }
 }

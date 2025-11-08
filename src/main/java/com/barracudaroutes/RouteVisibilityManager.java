@@ -19,6 +19,7 @@ import java.util.*;
 public class RouteVisibilityManager
 {
     private final Client client;
+    private final RouteManager routeManager;
     
     // Configuration
     private boolean enabled = true;
@@ -89,9 +90,10 @@ public class RouteVisibilityManager
     }
     
     @Inject
-    public RouteVisibilityManager(Client client)
+    public RouteVisibilityManager(Client client, RouteManager routeManager)
     {
         this.client = client;
+        this.routeManager = routeManager;
     }
     
     /**
@@ -127,12 +129,12 @@ public class RouteVisibilityManager
         }
         
         // Don't hide tiles when in edit mode
-        if (RouteManager.isInEditMode())
+        if (routeManager.isInEditMode())
         {
             return;
         }
         
-        Route activeRoute = RouteManager.getActiveRoute();
+        Route activeRoute = routeManager.getActiveRoute();
         
         // Reset if route changed (different route object)
         if (activeRoute != currentRoute && activeRoute != null)
@@ -396,7 +398,7 @@ public class RouteVisibilityManager
      */
     public Set<Integer> getVisibleTileIndices()
     {
-        Route activeRoute = RouteManager.getActiveRoute();
+        Route activeRoute = routeManager.getActiveRoute();
         
         // If no route, return empty set
         if (activeRoute == null)
@@ -419,7 +421,7 @@ public class RouteVisibilityManager
         }
         
         // In edit mode, show all tiles
-        if (RouteManager.isInEditMode())
+        if (routeManager.isInEditMode())
         {
             Set<Integer> allIndices = new HashSet<>();
             for (int i = 0; i < points.size(); i++)

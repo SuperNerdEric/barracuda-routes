@@ -19,12 +19,14 @@ public class RouteOverlay extends Overlay
 {
     private final Client client;
     private final RouteVisibilityManager visibilityManager;
+    private final RouteManager routeManager;
 
     @Inject
-    public RouteOverlay(Client client, RouteVisibilityManager visibilityManager)
+    public RouteOverlay(Client client, RouteVisibilityManager visibilityManager, RouteManager routeManager)
     {
         this.client = client;
         this.visibilityManager = visibilityManager;
+        this.routeManager = routeManager;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
@@ -57,7 +59,7 @@ public class RouteOverlay extends Overlay
     @Override
     public Dimension render(Graphics2D g)
     {
-        Route active = RouteManager.getActiveRoute();
+        Route active = routeManager.getActiveRoute();
         if (active == null)
         {
             return null;
@@ -112,7 +114,7 @@ public class RouteOverlay extends Overlay
         }
         
         // Highlight selected tile if one is selected
-        RoutePoint selectedTile = RouteManager.getSelectedTile();
+        RoutePoint selectedTile = routeManager.getSelectedTile();
         if (selectedTile != null)
         {
             WorldPoint wp = new WorldPoint(selectedTile.getX(), selectedTile.getY(), selectedTile.getPlane());

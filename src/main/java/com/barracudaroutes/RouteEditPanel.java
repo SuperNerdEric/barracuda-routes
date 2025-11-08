@@ -21,6 +21,7 @@ public class RouteEditPanel extends PluginPanel
     private final Runnable onBack;
     private final Runnable onSave;
     private final net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager;
+    private final RouteManager routeManager;
     
     private static final ImageIcon EDIT_ICON;
     private static final ImageIcon DELETE_ICON;
@@ -55,7 +56,7 @@ public class RouteEditPanel extends PluginPanel
     private int currentLap = 1;
     private final java.util.Set<Integer> emptyLaps = new java.util.HashSet<>();
     
-    public RouteEditPanel(BarracudaRoutesPlugin plugin, Route route, boolean isNewRoute, Runnable onBack, Runnable onSave, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager)
+    public RouteEditPanel(BarracudaRoutesPlugin plugin, Route route, boolean isNewRoute, Runnable onBack, Runnable onSave, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager)
     {
         this.plugin = plugin;
         this.route = route;
@@ -63,6 +64,7 @@ public class RouteEditPanel extends PluginPanel
         this.onBack = onBack;
         this.onSave = onSave;
         this.colorPickerManager = colorPickerManager;
+        this.routeManager = routeManager;
         
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
@@ -291,7 +293,7 @@ public class RouteEditPanel extends PluginPanel
         if (selected instanceof RoutePoint)
         {
             RoutePoint point = (RoutePoint) selected;
-            RouteManager.setSelectedTile(point);
+            routeManager.setSelectedTile(point);
             selectedLap = null;
             actionButtonsPanel.setVisible(true);
             editButton.setVisible(true);
@@ -302,7 +304,7 @@ public class RouteEditPanel extends PluginPanel
         else if (selected instanceof Integer)
         {
             selectedLap = (Integer) selected;
-            RouteManager.setSelectedTile(null);
+            routeManager.setSelectedTile(null);
             actionButtonsPanel.setVisible(true);
             editButton.setVisible(true); // Can edit lap color
             deleteButton.setVisible(true);
@@ -312,7 +314,7 @@ public class RouteEditPanel extends PluginPanel
         else
         {
             selectedLap = null;
-            RouteManager.setSelectedTile(null);
+            routeManager.setSelectedTile(null);
             actionButtonsPanel.setVisible(false);
         }
     }
@@ -320,7 +322,7 @@ public class RouteEditPanel extends PluginPanel
     private void restoreSelection()
     {
         // Try to restore selection based on RouteManager or selectedLap
-        RoutePoint selectedTile = RouteManager.getSelectedTile();
+        RoutePoint selectedTile = routeManager.getSelectedTile();
         if (selectedTile != null)
         {
             for (int i = 0; i < listModel.size(); i++)
@@ -475,6 +477,9 @@ public class RouteEditPanel extends PluginPanel
         route.setDescription(description);
         route.setTrialName(trialName);
         
+        // Save route to disk
+        routeManager.updateRoute(route);
+        
         onSave.run();
     }
     
@@ -537,6 +542,7 @@ public class RouteEditPanel extends PluginPanel
                 route.addPoint(newPoint);
                 lastRecordedPoint = newPoint;
                 // Remove from empty laps since we're adding a tile
+                routeManager.updateRoute(route);
                 emptyLaps.remove(currentLap);
                 // Update tiles list
                 populateTilesList();
@@ -576,6 +582,7 @@ public class RouteEditPanel extends PluginPanel
         route.addPoint(new RoutePoint(x, y, plane, currentLap));
         // Remove from empty laps since we're adding a tile
         emptyLaps.remove(currentLap);
+        routeManager.updateRoute(route);
         populateTilesList();
     }
     
@@ -623,7 +630,7 @@ public class RouteEditPanel extends PluginPanel
         route.getPoints().removeIf(point -> point.getLap() == lap);
         // Remove from empty laps if it was empty
         emptyLaps.remove(lap);
-        RouteManager.setSelectedTile(null);
+        routeManager.setSelectedTile(null);
         selectedLap = null;
         
         // If currentLap was the deleted lap, reset to 1
@@ -632,6 +639,7 @@ public class RouteEditPanel extends PluginPanel
             currentLap = 1;
         }
         
+        routeManager.updateRoute(route);
         populateTilesList();
     }
     
@@ -657,8 +665,9 @@ public class RouteEditPanel extends PluginPanel
         }
         
         route.getPoints().remove(point);
-        RouteManager.setSelectedTile(null);
+        routeManager.setSelectedTile(null);
         selectedLap = null;
+        routeManager.updateRoute(route);
         populateTilesList();
     }
     
@@ -747,9 +756,9 @@ public class RouteEditPanel extends PluginPanel
                 populateTilesList();
                 
                 // Update selected tile if it's the one being edited
-                if (RouteManager.getSelectedTile() == point)
+                if (routeManager.getSelectedTile() == point)
                 {
-                    RouteManager.setSelectedTile(point);
+                    routeManager.setSelectedTile(point);
                     restoreSelection();
                 }
                 
@@ -807,13 +816,14 @@ public class RouteEditPanel extends PluginPanel
             colorPicker.setLocation(this.getLocationOnScreen());
         }
         
-        // Set callback for when color changes
-        colorPicker.setOnColorChange((Color selectedColor) -> {
-            if (selectedColor != null)
-            {
-                route.setLapColor(lap, selectedColor);
-            }
-        });
+           // Set callback for when color changes
+           colorPicker.setOnColorChange((Color selectedColor) -> {
+               if (selectedColor != null)
+               {
+                   route.setLapColor(lap, selectedColor);
+                   routeManager.updateRoute(route);
+               }
+           });
         
         // Show the color picker
         colorPicker.setVisible(true);
@@ -934,6 +944,7 @@ public class RouteEditPanel extends PluginPanel
                     // Re-insert tiles
                     route.getPoints().addAll(tilesInLap);
                     
+                    routeManager.updateRoute(route);
                     // Refresh the list
                     populateTilesList();
                     
@@ -965,11 +976,12 @@ public class RouteEditPanel extends PluginPanel
                     }
                     route.getPoints().add(insertIndex, tile);
                     
+                    routeManager.updateRoute(route);
                     // Refresh the list
                     populateTilesList();
                     
                     // Update selection
-                    RouteManager.setSelectedTile(tile);
+                    routeManager.setSelectedTile(tile);
                     restoreSelection();
                     
                     return true;
@@ -1048,7 +1060,7 @@ public class RouteEditPanel extends PluginPanel
             if (name.isEmpty())
             {
                 // Remove the route since it has no name
-                RouteManager.removeRoute(route);
+                routeManager.removeRoute(route);
                 // Call onSave to update the list (remove from list)
                 onSave.run();
                 onBack.run();
@@ -1069,7 +1081,7 @@ public class RouteEditPanel extends PluginPanel
             recordingTimer = null;
         }
         // Clear selected tile when leaving edit panel
-        RouteManager.setSelectedTile(null);
+        routeManager.setSelectedTile(null);
         selectedLap = null;
     }
 }
