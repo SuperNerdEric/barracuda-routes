@@ -337,8 +337,17 @@ public class RouteVisibilityManager
         
         if (distance <= getConfig().hideDistance())
         {
-            // Player is near this tile, mark it as pending hide with countdown
-            nextTile.markPendingHide(getConfig().hideDelayTicks());
+            int delayTicks = getConfig().hideDelayTicks();
+            if (delayTicks <= 0)
+            {
+                // No delay - hide immediately
+                nextTile.isHidden = true;
+            }
+            else
+            {
+                // Player is near this tile, mark it as pending hide with countdown
+                nextTile.markPendingHide(delayTicks);
+            }
         }
     }
     
