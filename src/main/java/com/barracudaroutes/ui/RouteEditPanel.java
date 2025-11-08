@@ -179,10 +179,23 @@ public class RouteEditPanel extends PluginPanel
         // Name field
         JPanel namePanel = new JPanel();
         namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.X_AXIS));
-        namePanel.add(new JLabel("Name:"));
+        JLabel nameLabel = new JLabel("Name");
+        nameLabel.setBorder(new EmptyBorder(0, 0, 0, 8)); // Add margin to the right
+        namePanel.add(nameLabel);
         nameField = new JTextField(20);
         namePanel.add(nameField);
         panel.add(namePanel);
+        
+        // Trial Name dropdown
+        JPanel trialPanel = new JPanel();
+        trialPanel.setLayout(new BoxLayout(trialPanel, BoxLayout.X_AXIS));
+        JLabel trialLabel = new JLabel("Trial");
+        trialLabel.setBorder(new EmptyBorder(0, 0, 0, 8)); // Add margin to the right
+        trialPanel.add(trialLabel);
+        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
+        trialComboBox = new JComboBox<>(trialOptions);
+        trialPanel.add(trialComboBox);
+        panel.add(trialPanel);
         
         // Description field
         JPanel descPanel = new JPanel();
@@ -194,15 +207,6 @@ public class RouteEditPanel extends PluginPanel
         JScrollPane descScroll = new JScrollPane(descriptionField);
         descPanel.add(descScroll);
         panel.add(descPanel);
-        
-        // Trial Name dropdown
-        JPanel trialPanel = new JPanel();
-        trialPanel.setLayout(new BoxLayout(trialPanel, BoxLayout.X_AXIS));
-        trialPanel.add(new JLabel("Trial:"));
-        String[] trialOptions = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
-        trialComboBox = new JComboBox<>(trialOptions);
-        trialPanel.add(trialComboBox);
-        panel.add(trialPanel);
         
         return panel;
     }
