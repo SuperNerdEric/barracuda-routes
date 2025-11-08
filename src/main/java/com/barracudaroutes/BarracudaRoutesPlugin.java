@@ -21,7 +21,7 @@ import net.runelite.client.eventbus.Subscribe;
 @PluginDescriptor(
 		name = "Barracuda Routes",
 		description = "Create and share Barracuda Trials routes",
-		tags = {"barracuda", "routes", "trials", "path"}
+		tags = {"barracuda", "trials", "sailing", "routes", "path"}
 )
 public class BarracudaRoutesPlugin extends Plugin
 {
