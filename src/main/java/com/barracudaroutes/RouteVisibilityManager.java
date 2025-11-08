@@ -2,6 +2,7 @@ package com.barracudaroutes;
 
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.config.ConfigManager;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,12 +21,10 @@ public class RouteVisibilityManager
 {
     private final Client client;
     private final RouteManager routeManager;
+    private final ConfigManager configManager;
     
     // Configuration
     private boolean enabled = true;
-    private static final int HIDE_DISTANCE = 5; // tiles
-    private static final int HIDE_DELAY_TICKS = 5; // ticks (5 * 600ms = 3000ms = 3 seconds)
-    private static final int MAX_VISIBLE_TILES = 30;
     
     // Queue-based state
     private Route currentRoute = null;
@@ -66,9 +65,9 @@ public class RouteVisibilityManager
         /**
          * Mark this tile as pending hide with countdown
          */
-        void markPendingHide()
+        void markPendingHide(int delayTicks)
         {
-            ticksRemaining = HIDE_DELAY_TICKS;
+            ticksRemaining = delayTicks;
         }
         
         /**
@@ -90,10 +89,16 @@ public class RouteVisibilityManager
     }
     
     @Inject
-    public RouteVisibilityManager(Client client, RouteManager routeManager)
+    public RouteVisibilityManager(Client client, RouteManager routeManager, ConfigManager configManager)
     {
         this.client = client;
         this.routeManager = routeManager;
+        this.configManager = configManager;
+    }
+    
+    private BarracudaRoutesConfig getConfig()
+    {
+        return configManager.getConfig(BarracudaRoutesConfig.class);
     }
     
     /**
@@ -194,7 +199,7 @@ public class RouteVisibilityManager
         }
         
         List<RoutePoint> points = route.getPoints();
-        int tilesToAdd = Math.min(MAX_VISIBLE_TILES, points.size());
+        int tilesToAdd = Math.min(getConfig().maxVisibleTiles(), points.size());
         
         for (int i = 0; i < tilesToAdd; i++)
         {
@@ -330,10 +335,10 @@ public class RouteVisibilityManager
         RoutePoint point = points.get(nextTile.index);
         int distance = getDistance(playerPos, point);
         
-        if (distance <= HIDE_DISTANCE)
+        if (distance <= getConfig().hideDistance())
         {
             // Player is near this tile, mark it as pending hide with countdown
-            nextTile.markPendingHide();
+            nextTile.markPendingHide(getConfig().hideDelayTicks());
         }
     }
     
@@ -385,7 +390,7 @@ public class RouteVisibilityManager
             return false; // This tile should be hidden (previous tiles were hidden)
         }
         
-        if (index >= firstVisibleIndex + MAX_VISIBLE_TILES)
+        if (index >= firstVisibleIndex + getConfig().maxVisibleTiles())
         {
             return false; // Beyond max visible tiles
         }
@@ -442,7 +447,7 @@ public class RouteVisibilityManager
         List<RoutePoint> currentRoutePoints = currentRoute.getPoints();
         int firstVisibleIndex = findFirstVisibleIndex(currentRoutePoints);
         
-        for (int i = firstVisibleIndex; i < currentRoutePoints.size() && i < firstVisibleIndex + MAX_VISIBLE_TILES; i++)
+        for (int i = firstVisibleIndex; i < currentRoutePoints.size() && i < firstVisibleIndex + getConfig().maxVisibleTiles(); i++)
         {
             // Check if tile is visible by looking in queue
             boolean found = false;

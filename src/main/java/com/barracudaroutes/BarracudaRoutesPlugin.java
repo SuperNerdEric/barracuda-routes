@@ -13,10 +13,6 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.Subscribe;
 
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.io.IOException;
-import java.io.InputStream;
 
 @PluginDescriptor(
 		name = "Barracuda Routes",
@@ -45,9 +41,18 @@ public class BarracudaRoutesPlugin extends Plugin
 	
 	@Inject
 	private RouteManager routeManager;
+	
+	@Inject
+	private BarracudaRoutesConfig config;
 
 	private BarracudaRoutesPanel panel;
 	private NavigationButton navButton;
+	
+	@Provides
+	BarracudaRoutesConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(BarracudaRoutesConfig.class);
+	}
 
 	@Override
 	protected void startUp() throws Exception

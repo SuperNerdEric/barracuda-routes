@@ -8,12 +8,32 @@ import net.runelite.client.config.ConfigItem;
 public interface BarracudaRoutesConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "hideDistance",
+		name = "Hide Distance",
+		description = "Distance in tiles at which route tiles will hide when the player is near them"
 	)
-	default String greeting()
+	default int hideDistance()
 	{
-		return "Hello";
+		return 5;
+	}
+	
+	@ConfigItem(
+		keyName = "hideDelayTicks",
+		name = "Hide Delay (Ticks)",
+		description = "Number of game ticks to wait before hiding a tile after the player is near it (1 tick = 0.6 seconds)"
+	)
+	default int hideDelayTicks()
+	{
+		return 5;
+	}
+	
+	@ConfigItem(
+		keyName = "maxVisibleTiles",
+		name = "Max Visible Tiles",
+		description = "Maximum number of route tiles visible at a time"
+	)
+	default int maxVisibleTiles()
+	{
+		return 30;
 	}
 }
