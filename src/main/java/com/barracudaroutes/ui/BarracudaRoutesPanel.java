@@ -73,7 +73,6 @@ public class BarracudaRoutesPanel extends PluginPanel
         
         JLabel titleLabel = new JLabel("Barracuda Routes");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        titleLabel.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the title
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         titlePanel.add(titleLabel, BorderLayout.WEST);
         
@@ -91,7 +90,8 @@ public class BarracudaRoutesPanel extends PluginPanel
         // Add icon to the button
         createButton.setIcon(BOAT_ICON);
         createButton.setIconTextGap(8); // Add spacing between text and icon
-        
+        createButton.setBackground(new Color(0, 100, 0));
+
         top.add(createButton, BorderLayout.NORTH);
         top.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the button
         // Set preferred size after adding components to prevent shifting when other components change
