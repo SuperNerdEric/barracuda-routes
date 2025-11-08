@@ -91,4 +91,16 @@ public interface BarracudaRoutesConfig extends Config
 	{
 		return 100;
 	}
+
+	@ConfigItem(
+		keyName = "showRouteDirectionArrows",
+		name = "Show Direction Arrows",
+		description = "Draw arrows on every other tile to highlight the route direction",
+		section = routeAppearanceSection,
+		position = 3
+	)
+	default boolean showRouteDirectionArrows()
+	{
+		return false;
+	}
 }

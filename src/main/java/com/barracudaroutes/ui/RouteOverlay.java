@@ -19,6 +19,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.Perspective;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -81,6 +82,8 @@ public class RouteOverlay extends Overlay
         
         // Get visible tile indices from visibility manager
         Set<Integer> visibleIndices = visibilityManager.getVisibleTileIndices();
+        List<Point> visiblePoints = new ArrayList<>();
+        List<Color> segmentColors = new ArrayList<>();
 
         Stroke originalStroke = g.getStroke();
         float lineWidth = Math.min(10f, Math.max(1f, config.routeLineWidth()));
@@ -124,6 +127,10 @@ public class RouteOverlay extends Overlay
                     prev = null;
                     continue;
                 }
+
+                visiblePoints.add(canvas);
+                segmentColors.add(null);
+                int currentIndex = visiblePoints.size() - 1;
                 
                 // Set color for this point's lap (used for the line segment from prev to this point)
                 Color lapColor = getLapColor(active, currentLap);
@@ -134,9 +141,32 @@ public class RouteOverlay extends Overlay
                 if (prev != null)
                 {
                     g.drawLine(prev.getX(), prev.getY(), canvas.getX(), canvas.getY());
+                    if (currentIndex > 0)
+                    {
+                        segmentColors.set(currentIndex - 1, lineColor);
+                    }
                 }
                 prev = canvas;
             }
+        }
+
+        if (config.showRouteDirectionArrows())
+        {
+            Color previousColor = g.getColor();
+            for (int i = 0; i < visiblePoints.size() - 1; i++)
+            {
+                if ((i % 2) == 0)
+                {
+                    Color arrowColor = segmentColors.get(i);
+                    if (arrowColor == null)
+                    {
+                        continue;
+                    }
+                    g.setColor(arrowColor);
+                    drawDirectionArrow(g, visiblePoints.get(i), visiblePoints.get(i + 1), lineWidth);
+                }
+            }
+            g.setColor(previousColor);
         }
         
         // Highlight selected tile if one is selected
@@ -164,5 +194,34 @@ public class RouteOverlay extends Overlay
         }
         g.setStroke(originalStroke);
         return null;
+    }
+
+    private void drawDirectionArrow(Graphics2D g, Point from, Point to, float lineWidth)
+    {
+        double dx = to.getX() - from.getX();
+        double dy = to.getY() - from.getY();
+        if (dx == 0 && dy == 0)
+        {
+            return;
+        }
+
+        double angle = Math.atan2(dy, dx);
+        int baseX = from.getX();
+        int baseY = from.getY();
+        int arrowLength = Math.max(10, Math.round(8 + lineWidth * 2));
+        int arrowTipX = (int) Math.round(baseX + Math.cos(angle) * arrowLength);
+        int arrowTipY = (int) Math.round(baseY + Math.sin(angle) * arrowLength);
+
+        g.drawLine(baseX, baseY, arrowTipX, arrowTipY);
+
+        double headAngle = Math.toRadians(25);
+        int arrowHeadSize = Math.max(6, Math.round(4 + lineWidth));
+        int leftX = (int) Math.round(arrowTipX - Math.cos(angle - headAngle) * arrowHeadSize);
+        int leftY = (int) Math.round(arrowTipY - Math.sin(angle - headAngle) * arrowHeadSize);
+        int rightX = (int) Math.round(arrowTipX - Math.cos(angle + headAngle) * arrowHeadSize);
+        int rightY = (int) Math.round(arrowTipY - Math.sin(angle + headAngle) * arrowHeadSize);
+
+        g.drawLine(arrowTipX, arrowTipY, leftX, leftY);
+        g.drawLine(arrowTipX, arrowTipY, rightX, rightY);
     }
 }
