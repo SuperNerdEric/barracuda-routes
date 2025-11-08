@@ -54,6 +54,14 @@ public class BarracudaRoutesPanel extends PluginPanel
         
         // Set up main panel
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        
+        // Title label at the top
+        JLabel titleLabel = new JLabel("Barracuda Routes");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        titleLabel.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the title
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(titleLabel);
+        
         JPanel top = new JPanel();
         top.setLayout(new BorderLayout());
         top.setAlignmentX(Component.LEFT_ALIGNMENT); // Explicitly align to left
@@ -76,7 +84,6 @@ public class BarracudaRoutesPanel extends PluginPanel
         // Set preferred size to prevent width changes when buttons appear/disappear
         routesHeaderPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 30));
         JLabel routesLabel = new JLabel("Routes");
-        routesLabel.setFont(routesLabel.getFont().deriveFont(Font.BOLD));
         routesLabel.setBorder(new EmptyBorder(8, 0, 0, 0));
         routesHeaderPanel.add(routesLabel, BorderLayout.WEST);
         
