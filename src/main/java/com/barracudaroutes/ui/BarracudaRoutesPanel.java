@@ -59,15 +59,11 @@ public class BarracudaRoutesPanel extends PluginPanel
         top.setAlignmentX(Component.LEFT_ALIGNMENT); // Explicitly align to left
         top.setMaximumSize(new Dimension(300, 200));
         
-        // Create button panel with icon to the right
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        buttonPanel.add(createButton);
-        buttonPanel.add(Box.createHorizontalStrut(8)); // Add spacing between button and icon
-        JLabel boatLabel = new JLabel(BOAT_ICON);
-        buttonPanel.add(boatLabel);
+        // Add icon to the button
+        createButton.setIcon(BOAT_ICON);
+        createButton.setIconTextGap(8); // Add spacing between text and icon
         
-        top.add(buttonPanel, BorderLayout.WEST);
+        top.add(createButton, BorderLayout.NORTH);
         top.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the button
         // Set preferred size after adding components to prevent shifting when other components change
         top.setPreferredSize(new Dimension(300, top.getPreferredSize().height));
