@@ -4,6 +4,8 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
+import net.runelite.client.config.Units;
 
 @ConfigGroup("barracudaroutes")
 public interface BarracudaRoutesConfig extends Config
@@ -14,6 +16,13 @@ public interface BarracudaRoutesConfig extends Config
 		description = "Settings for automatic route tile visibility"
 	)
 	String routeVisibilitySection = "routeVisibilitySection";
+
+	@ConfigSection(
+		position = 1,
+		name = "Route appearance",
+		description = "Visual settings for route lines"
+	)
+	String routeAppearanceSection = "routeAppearanceSection";
 
 	@ConfigItem(
 		keyName = "hideDistance",
@@ -49,5 +58,37 @@ public interface BarracudaRoutesConfig extends Config
 	default int maxVisibleTiles()
 	{
 		return 30;
+	}
+
+	@Range(
+		min = 1,
+		max = 10
+	)
+	@ConfigItem(
+		keyName = "routeLineWidth",
+		name = "Route Line Width",
+		description = "Pixel width of the route lines in the overlay",
+		section = routeAppearanceSection,
+		position = 1
+	)
+	default int routeLineWidth()
+	{
+		return 1;
+	}
+
+	@Range(
+		max = 100
+	)
+	@Units(Units.PERCENT)
+	@ConfigItem(
+		keyName = "routeLineOpacity",
+		name = "Route Line Opacity",
+		description = "Opacity of the route lines",
+		section = routeAppearanceSection,
+		position = 2
+	)
+	default int routeLineOpacity()
+	{
+		return 100;
 	}
 }

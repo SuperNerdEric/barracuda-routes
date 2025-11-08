@@ -2,6 +2,7 @@ package com.barracudaroutes.ui;
 
 import javax.inject.Inject;
 
+import com.barracudaroutes.BarracudaRoutesConfig;
 import com.barracudaroutes.managers.RouteManager;
 import com.barracudaroutes.managers.RouteVisibilityManager;
 import com.barracudaroutes.model.routenodes.LapDividerNode;
@@ -26,13 +27,15 @@ public class RouteOverlay extends Overlay
     private final Client client;
     private final RouteVisibilityManager visibilityManager;
     private final RouteManager routeManager;
+    private final BarracudaRoutesConfig config;
 
     @Inject
-    public RouteOverlay(Client client, RouteVisibilityManager visibilityManager, RouteManager routeManager)
+    public RouteOverlay(Client client, RouteVisibilityManager visibilityManager, RouteManager routeManager, BarracudaRoutesConfig config)
     {
         this.client = client;
         this.visibilityManager = visibilityManager;
         this.routeManager = routeManager;
+        this.config = config;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
@@ -78,8 +81,12 @@ public class RouteOverlay extends Overlay
         
         // Get visible tile indices from visibility manager
         Set<Integer> visibleIndices = visibilityManager.getVisibleTileIndices();
-        
-        g.setStroke(new BasicStroke(3.0f));
+
+        Stroke originalStroke = g.getStroke();
+        float lineWidth = Math.min(10f, Math.max(1f, config.routeLineWidth()));
+        g.setStroke(new BasicStroke(lineWidth));
+        int lineOpacityPercent = Math.max(0, Math.min(100, config.routeLineOpacity()));
+        float opacityScale = lineOpacityPercent / 100f;
         Point prev = null;
         int currentLap = 1;
         
@@ -120,7 +127,9 @@ public class RouteOverlay extends Overlay
                 
                 // Set color for this point's lap (used for the line segment from prev to this point)
                 Color lapColor = getLapColor(active, currentLap);
-                g.setColor(lapColor);
+                int combinedAlpha = Math.round(lapColor.getAlpha() * opacityScale);
+                Color lineColor = new Color(lapColor.getRed(), lapColor.getGreen(), lapColor.getBlue(), combinedAlpha);
+                g.setColor(lineColor);
                 
                 if (prev != null)
                 {
@@ -153,7 +162,7 @@ public class RouteOverlay extends Overlay
                 }
             }
         }
-        
+        g.setStroke(originalStroke);
         return null;
     }
 }
