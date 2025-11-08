@@ -3,6 +3,7 @@ package com.barracudaroutes.ui;
 import com.barracudaroutes.BarracudaRoutesPlugin;
 import com.barracudaroutes.model.Route;
 import com.barracudaroutes.managers.RouteManager;
+import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
@@ -267,6 +268,7 @@ public class BarracudaRoutesPanel extends PluginPanel
                 String trialName = (String) value;
                 label.setText(trialName);
                 label.setFont(label.getFont().deriveFont(Font.BOLD));
+                label.setForeground(JagexColors.DARK_ORANGE_INTERFACE_TEXT);
             }
             else if (value instanceof Route)
             {
