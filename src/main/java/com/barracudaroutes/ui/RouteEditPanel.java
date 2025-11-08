@@ -32,18 +32,26 @@ public class RouteEditPanel extends PluginPanel
     private static final ImageIcon EDIT_ICON;
     private static final ImageIcon DELETE_ICON;
     private static final ImageIcon ARROW_BACK_ICON;
+    private static final ImageIcon RECORD_ICON;
+    private static final ImageIcon STOP_ICON;
+    private static final ImageIcon TILE_ICON;
+    private static final ImageIcon FLAG_ICON;
     
     static
     {
         EDIT_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/edit.png"));
         DELETE_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/delete.png"));
         ARROW_BACK_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/arrow_back.png"));
+        RECORD_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/record.png"));
+        STOP_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/stop.png"));
+        TILE_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/tile.png"));
+        FLAG_ICON = new ImageIcon(ImageUtil.loadImageResource(RouteEditPanel.class, "/panel/flag.png"));
     }
     
     private final JButton backButton = new JButton(ARROW_BACK_ICON);
-    private final JButton recordButton = new JButton("Record");
+    private final JButton recordButton = new JButton("Record tiles");
     private final JButton stopRecordButton = new JButton("Stop Recording");
-    private final JButton addTileButton = new JButton("Add tile (player)");
+    private final JButton addTileButton = new JButton("Add current tile");
     private final JButton newLapButton = new JButton("New Lap");
     
     private JTextField nameField;
@@ -70,6 +78,11 @@ public class RouteEditPanel extends PluginPanel
         this.onSave = onSave;
         this.colorPickerManager = colorPickerManager;
         this.routeManager = routeManager;
+        
+        styleButton(recordButton, RECORD_ICON);
+        styleButton(stopRecordButton, STOP_ICON);
+        styleButton(addTileButton, TILE_ICON);
+        styleButton(newLapButton, FLAG_ICON);
         
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
@@ -1018,6 +1031,25 @@ public class RouteEditPanel extends PluginPanel
             }
             return this;
         }
+    }
+    
+    /**
+     * Styles a button with consistent appearance: icon, left alignment, 26px height, and minimal padding
+     */
+    private void styleButton(JButton button, ImageIcon icon)
+    {
+        button.setIcon(icon);
+        button.setIconTextGap(8);
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setHorizontalTextPosition(SwingConstants.RIGHT);
+
+        button.setMargin(new Insets(2, 4, 2, 4));
+        button.setBorder(new EmptyBorder(2, 4, 2, 6));
+        button.setPreferredSize(new Dimension(button.getPreferredSize().width, 26));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        button.setMinimumSize(new Dimension(button.getMinimumSize().width, 26));
+        button.setBorderPainted(false); // Remove default border that might add extra padding
+        button.setFocusPainted(false);
     }
     
     private JButton createButton(ImageIcon icon, String toolTipText, Runnable onClick)
