@@ -104,6 +104,7 @@ public class RouteEditPanel extends PluginPanel
             new EmptyBorder(0, 0, 8, 0)
         ));
         add(editPanel);
+        add(Box.createVerticalStrut(8));
         
         // Buttons panel (record, stop recording, add tile, new lap) - aligned to the left
         JPanel buttonsPanel = new JPanel();
@@ -189,7 +190,8 @@ public class RouteEditPanel extends PluginPanel
     {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder("Details"));
+        panel.setBorder(BorderFactory.createTitledBorder("Route Details"));
+        panel.add(Box.createVerticalStrut(2));
         
         // Name field
         JPanel namePanel = new JPanel();
@@ -200,6 +202,7 @@ public class RouteEditPanel extends PluginPanel
         nameField = new JTextField(20);
         namePanel.add(nameField);
         panel.add(namePanel);
+        panel.add(Box.createVerticalStrut(2));
         
         // Trial Name dropdown
         JPanel trialPanel = new JPanel();
@@ -211,6 +214,7 @@ public class RouteEditPanel extends PluginPanel
         trialComboBox = new JComboBox<>(trialOptions);
         trialPanel.add(trialComboBox);
         panel.add(trialPanel);
+        panel.add(Box.createVerticalStrut(4));
         
         // Description field
         JPanel descPanel = new JPanel();

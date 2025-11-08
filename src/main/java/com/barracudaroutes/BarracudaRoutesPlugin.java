@@ -2,6 +2,7 @@ package com.barracudaroutes;
 
 import com.barracudaroutes.managers.RouteManager;
 import com.barracudaroutes.managers.RouteVisibilityManager;
+import com.barracudaroutes.managers.RouteImportExportManager;
 import com.barracudaroutes.ui.BarracudaRoutesPanel;
 import com.barracudaroutes.ui.RouteOverlay;
 import com.google.inject.Provides;
@@ -47,6 +48,9 @@ public class BarracudaRoutesPlugin extends Plugin
 	private RouteManager routeManager;
 	
 	@Inject
+	private RouteImportExportManager routeImportExportManager;
+	
+	@Inject
 	private BarracudaRoutesConfig config;
 
 	private BarracudaRoutesPanel panel;
@@ -63,7 +67,7 @@ public class BarracudaRoutesPlugin extends Plugin
 	{
 		// Load routes from disk
 		routeManager.loadRoutes();
-		panel = new BarracudaRoutesPanel(this, colorPickerManager, routeManager);
+		panel = new BarracudaRoutesPanel(this, colorPickerManager, routeManager, routeImportExportManager);
 		navButton = NavigationButton.builder()
 				.tooltip("Barracuda Routes")
 				.icon(ImageUtil.loadImageResource(getClass(), "/barracuda_icon.png"))

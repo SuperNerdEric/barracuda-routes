@@ -3,6 +3,7 @@ package com.barracudaroutes.ui;
 import com.barracudaroutes.BarracudaRoutesPlugin;
 import com.barracudaroutes.model.Route;
 import com.barracudaroutes.managers.RouteManager;
+import com.barracudaroutes.managers.RouteImportExportManager;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
@@ -19,6 +20,7 @@ public class BarracudaRoutesPanel extends PluginPanel
     private final BarracudaRoutesPlugin plugin;
     private final net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager;
     private final RouteManager routeManager;
+    private final RouteImportExportManager importExportManager;
     private final JButton createButton = new JButton("Create route");
     
     // Card layout for switching between main and edit panels
@@ -29,8 +31,10 @@ public class BarracudaRoutesPanel extends PluginPanel
     private DefaultListModel<Object> listModel;
     
     private static final String[] TRIAL_OPTIONS = {"The Tempor Tantrum", "Jubbly Jive", "Gwenith Glide"};
+    private JButton exportButton;
     private JButton editButton;
     private JButton deleteButton;
+    private JButton importButton;
     private JPanel actionButtonsPanel;
     private RouteEditPanel editPanel;
     
@@ -45,22 +49,35 @@ public class BarracudaRoutesPanel extends PluginPanel
         BOAT_ICON = new ImageIcon(ImageUtil.loadImageResource(BarracudaRoutesPanel.class, "/panel/boat.png"));
     }
 
-    public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager)
+    public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager, RouteImportExportManager importExportManager)
     {
         this.plugin = plugin;
         this.colorPickerManager = colorPickerManager;
         this.routeManager = routeManager;
+        this.importExportManager = importExportManager;
         setLayout(new BorderLayout());
         
         // Set up main panel
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         
-        // Title label at the top
+        // Title panel with import button on the right
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        titlePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30)); // Constrain height to prevent layout shifts
+        titlePanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 30));
+        
         JLabel titleLabel = new JLabel("Barracuda Routes");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         titleLabel.setBorder(new EmptyBorder(0, 0, 8, 0)); // Add margin below the title
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        mainPanel.add(titleLabel);
+        titlePanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Import button on the right
+        importButton = new JButton("Import");
+        importButton.addActionListener(e -> onImport());
+        titlePanel.add(importButton, BorderLayout.EAST);
+        
+        mainPanel.add(titlePanel);
         
         JPanel top = new JPanel();
         top.setLayout(new BorderLayout());
@@ -87,16 +104,19 @@ public class BarracudaRoutesPanel extends PluginPanel
         routesLabel.setBorder(new EmptyBorder(8, 0, 0, 0));
         routesHeaderPanel.add(routesLabel, BorderLayout.WEST);
         
-        // Action buttons panel (edit/delete) - initially hidden
+        // Action buttons panel (export/edit/delete) - initially hidden
         actionButtonsPanel = new JPanel();
         actionButtonsPanel.setLayout(new BoxLayout(actionButtonsPanel, BoxLayout.X_AXIS));
+        exportButton = new JButton("Export");
+        exportButton.addActionListener(e -> onExportSelected());
         editButton = createButton(EDIT_ICON, "Edit route", () -> onEditSelected());
         deleteButton = createButton(DELETE_ICON, "Delete route", () -> onDeleteSelected());
+        actionButtonsPanel.add(exportButton);
         actionButtonsPanel.add(editButton);
         actionButtonsPanel.add(deleteButton);
         // Set fixed size to prevent layout shifts
-        actionButtonsPanel.setPreferredSize(new Dimension(60, 24));
-        actionButtonsPanel.setMaximumSize(new Dimension(60, 24));
+        actionButtonsPanel.setPreferredSize(new Dimension(120, 24));
+        actionButtonsPanel.setMaximumSize(new Dimension(120, 24));
         actionButtonsPanel.setVisible(false);
         routesHeaderPanel.add(actionButtonsPanel, BorderLayout.EAST);
         mainPanel.add(routesHeaderPanel);
@@ -233,6 +253,104 @@ public class BarracudaRoutesPanel extends PluginPanel
         {
             routeManager.setActiveRoute(null);
             routesList.clearSelection();
+        }
+    }
+    
+    private void onExportSelected()
+    {
+        Object selected = routesList.getSelectedValue();
+        if (selected instanceof Route)
+        {
+            onExport((Route) selected);
+        }
+    }
+    
+    private void onExport(Route route)
+    {
+        if (route == null)
+        {
+            return;
+        }
+        
+        // Copy route to clipboard
+        boolean success = importExportManager.exportRouteToClipboard(route);
+        
+        if (success)
+        {
+            JOptionPane.showMessageDialog(this,
+                "Route data was copied to clipboard.",
+                "Export Route Succeeded",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+        else
+        {
+            JOptionPane.showMessageDialog(this,
+                "Failed to export route.",
+                "Export Route Failed",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void onImport()
+    {
+        try
+        {
+            // Show dialog to paste route JSON
+            String json = JOptionPane.showInputDialog(this,
+                "Enter route data",
+                "Import New Route",
+                JOptionPane.PLAIN_MESSAGE);
+            
+            // Cancel button was clicked
+            if (json == null)
+            {
+                return;
+            }
+            
+            Route importedRoute = importExportManager.importRouteFromJson(json);
+            
+            if (importedRoute != null)
+            {
+                // Check if route with same name already exists and rename if needed
+                String originalName = importedRoute.getName();
+                String newName = originalName;
+                int counter = 1;
+                while (true)
+                {
+                    final String nameToCheck = newName;
+                    boolean nameExists = routeManager.getAllRoutes().stream().anyMatch(r -> r.getName().equals(nameToCheck));
+                    if (!nameExists)
+                    {
+                        break;
+                    }
+                    newName = originalName + " (" + counter + ")";
+                    counter++;
+                }
+                importedRoute.setName(newName);
+                
+                // Add the imported route
+                routeManager.addRoute(importedRoute);
+                populateRoutesList();
+                
+                JOptionPane.showMessageDialog(this,
+                    "Route imported successfully: " + newName,
+                    "Import Route Succeeded",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+            else
+            {
+                JOptionPane.showMessageDialog(this,
+                    "Invalid route data.",
+                    "Import Route Failed",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        catch (Exception e)
+        {
+            JOptionPane.showMessageDialog(this,
+                "Failed to import route: " + e.getMessage(),
+                "Import Route Failed",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     
