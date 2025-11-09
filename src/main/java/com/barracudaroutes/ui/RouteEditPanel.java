@@ -6,6 +6,7 @@ import com.barracudaroutes.model.routenodes.LapDividerNode;
 import com.barracudaroutes.model.routenodes.PointNode;
 import com.barracudaroutes.model.Route;
 import com.barracudaroutes.model.routenodes.RouteNode;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
@@ -194,6 +195,7 @@ public class RouteEditPanel extends PluginPanel
         newLapButton.addActionListener(e -> onNewLap());
         
         updateButtons();
+        plugin.setManualTileSelectionConsumer(this::handleManualTileSelection);
     }
     
     private JPanel createEditFields()
@@ -638,6 +640,23 @@ public class RouteEditPanel extends PluginPanel
         populateTilesList();
     }
     
+    private void handleManualTileSelection(WorldPoint worldPoint)
+    {
+        if (worldPoint == null)
+        {
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            ensureLapDividerExists(currentLap);
+            PointNode newPoint = new PointNode(worldPoint.getX(), worldPoint.getY(), worldPoint.getPlane());
+            route.addNode(newPoint);
+            routeManager.setSelectedTile(newPoint);
+            routeManager.updateRoute(route);
+            populateTilesList();
+        });
+    }
+    
     private void onNewLap()
     {
         // Find the highest lap number
@@ -1016,6 +1035,7 @@ public class RouteEditPanel extends PluginPanel
             this.index = index;
         }
         
+        @SuppressWarnings("unused")
         public Object getValue()
         {
             return value;
@@ -1113,6 +1133,7 @@ public class RouteEditPanel extends PluginPanel
             recordingTimer.stop();
             recordingTimer = null;
         }
+        plugin.clearManualTileSelectionConsumer();
         // Clear selected tile when leaving edit panel
         routeManager.setSelectedTile(null);
         selectedLap = null;
