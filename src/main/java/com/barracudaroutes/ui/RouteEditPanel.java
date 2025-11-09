@@ -230,7 +230,7 @@ public class RouteEditPanel extends PluginPanel
         JPanel descPanel = new JPanel();
         descPanel.setLayout(new BoxLayout(descPanel, BoxLayout.Y_AXIS));
         descPanel.add(new JLabel("Description (optional):"));
-        descriptionField = new JTextArea(3, 20);
+        descriptionField = new JTextArea(5, 20);
         descriptionField.setLineWrap(true);
         descriptionField.setWrapStyleWord(true);
         JScrollPane descScroll = new JScrollPane(descriptionField);
