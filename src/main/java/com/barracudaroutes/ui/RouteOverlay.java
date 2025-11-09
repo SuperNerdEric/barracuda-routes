@@ -100,9 +100,8 @@ public class RouteOverlay extends Overlay
             
             if (node instanceof LapDividerNode)
             {
-                // Update current lap
+                // Update current lap but keep previous point so laps remain connected
                 currentLap = ((LapDividerNode) node).getLapNumber();
-                prev = null; // Break the line at lap dividers
                 continue;
             }
             else if (node instanceof PointNode)
