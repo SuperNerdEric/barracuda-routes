@@ -71,6 +71,8 @@ public class RouteEditPanel extends PluginPanel
     
     public RouteEditPanel(BarracudaRoutesPlugin plugin, Route route, boolean isNewRoute, Runnable onBack, Runnable onSave, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager)
     {
+        super(false);
+        setBorder(new EmptyBorder(6, 6, 6, 6));
         this.plugin = plugin;
         this.route = route;
         this.isNewRoute = isNewRoute;
@@ -84,13 +86,19 @@ public class RouteEditPanel extends PluginPanel
         styleButton(addTileButton, TILE_ICON);
         styleButton(newLapButton, FLAG_ICON);
         
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new BorderLayout());
+
+        JPanel headerPanel = new JPanel();
+        headerPanel.setOpaque(false);
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        add(headerPanel, BorderLayout.NORTH);
         
         // Top panel with back button on the right
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
         topPanel.add(backButton, BorderLayout.EAST);
-        add(topPanel);
+        topPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.add(topPanel);
         
         // Style back button
         backButton.setPreferredSize(new Dimension(24, 24));
@@ -103,8 +111,9 @@ public class RouteEditPanel extends PluginPanel
             editPanel.getBorder(),
             new EmptyBorder(0, 0, 8, 0)
         ));
-        add(editPanel);
-        add(Box.createVerticalStrut(8));
+        editPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.add(editPanel);
+        headerPanel.add(Box.createVerticalStrut(8));
         
         // Buttons panel (record, stop recording, add tile, new lap) - aligned to the left
         JPanel buttonsPanel = new JPanel();
@@ -119,7 +128,8 @@ public class RouteEditPanel extends PluginPanel
         // Wrap in a panel with BorderLayout to align to the left
         JPanel buttonsWrapper = new JPanel(new BorderLayout());
         buttonsWrapper.add(buttonsPanel, BorderLayout.WEST);
-        add(buttonsWrapper);
+        buttonsWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.add(buttonsWrapper);
         
         // Initially hide stop recording button
         stopRecordButton.setVisible(false);
@@ -140,7 +150,8 @@ public class RouteEditPanel extends PluginPanel
         actionButtonsPanel.add(deleteButton);
         actionButtonsPanel.setVisible(false);
         tilesHeaderPanel.add(actionButtonsPanel, BorderLayout.EAST);
-        add(tilesHeaderPanel);
+        tilesHeaderPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.add(tilesHeaderPanel);
         
         // Set up tiles list
         listModel = new DefaultListModel<>();
@@ -169,9 +180,8 @@ public class RouteEditPanel extends PluginPanel
         });
         
         JScrollPane tilesScroll = new JScrollPane(tilesList);
-        tilesScroll.setPreferredSize(new Dimension(Integer.MAX_VALUE, 800));
-        add(tilesScroll);
-        add(Box.createVerticalGlue());
+        tilesScroll.setBorder(new EmptyBorder(8, 0, 0, 0));
+        add(tilesScroll, BorderLayout.CENTER);
         
         // Populate fields
         populateFields();

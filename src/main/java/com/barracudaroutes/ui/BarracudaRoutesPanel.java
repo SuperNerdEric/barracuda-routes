@@ -37,6 +37,7 @@ public class BarracudaRoutesPanel extends PluginPanel
     private JButton importButton;
     private JPanel actionButtonsPanel;
     private RouteEditPanel editPanel;
+    private JComponent editPanelComponent;
     
     private static final ImageIcon EDIT_ICON;
     private static final ImageIcon DELETE_ICON;
@@ -55,6 +56,8 @@ public class BarracudaRoutesPanel extends PluginPanel
 
     public BarracudaRoutesPanel(BarracudaRoutesPlugin plugin, net.runelite.client.ui.components.colorpicker.ColorPickerManager colorPickerManager, RouteManager routeManager, RouteImportExportManager importExportManager)
     {
+        super(false);
+        this.setBorder(new EmptyBorder(6, 6, 6, 6));
         this.plugin = plugin;
         this.colorPickerManager = colorPickerManager;
         this.routeManager = routeManager;
@@ -442,7 +445,11 @@ public class BarracudaRoutesPanel extends PluginPanel
         if (editPanel != null)
         {
             editPanel.cleanup();
-            cardPanel.remove(editPanel);
+            if (editPanelComponent != null)
+            {
+                cardPanel.remove(editPanelComponent);
+                editPanelComponent = null;
+            }
         }
         
         // Activate the route so it shows in the overlay
@@ -460,7 +467,8 @@ public class BarracudaRoutesPanel extends PluginPanel
         
         // Create new edit panel
         editPanel = new RouteEditPanel(plugin, route, isNew, this::showMainPanel, this::onEditSave, colorPickerManager, routeManager);
-        cardPanel.add(editPanel, "EDIT");
+        editPanelComponent = editPanel.getWrappedPanel();
+        cardPanel.add(editPanelComponent, "EDIT");
         cardLayout.show(cardPanel, "EDIT");
     }
     
@@ -469,7 +477,11 @@ public class BarracudaRoutesPanel extends PluginPanel
         if (editPanel != null)
         {
             editPanel.cleanup();
-            cardPanel.remove(editPanel);
+            if (editPanelComponent != null)
+            {
+                cardPanel.remove(editPanelComponent);
+                editPanelComponent = null;
+            }
             editPanel = null;
         }
         
