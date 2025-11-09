@@ -103,4 +103,16 @@ public interface BarracudaRoutesConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+		keyName = "useCurvedRouteLines",
+		name = "Curved Route Lines",
+		description = "Draw smooth curved lines between tiles instead of sharp segments",
+		section = routeAppearanceSection,
+		position = 4
+	)
+	default boolean useCurvedRouteLines()
+	{
+		return true;
+	}
 }

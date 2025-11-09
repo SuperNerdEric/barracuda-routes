@@ -19,6 +19,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.Perspective;
 
 import java.awt.*;
+import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -140,7 +141,6 @@ public class RouteOverlay extends Overlay
                 
                 if (prev != null)
                 {
-                    g.drawLine(prev.getX(), prev.getY(), canvas.getX(), canvas.getY());
                     if (currentIndex > 0)
                     {
                         segmentColors.set(currentIndex - 1, lineColor);
@@ -149,6 +149,8 @@ public class RouteOverlay extends Overlay
                 prev = canvas;
             }
         }
+
+        drawRouteSegments(g, visiblePoints, segmentColors);
 
         if (config.showRouteDirectionArrows())
         {
@@ -194,6 +196,57 @@ public class RouteOverlay extends Overlay
         }
         g.setStroke(originalStroke);
         return null;
+    }
+
+    private void drawRouteSegments(Graphics2D g, List<Point> points, List<Color> segmentColors)
+    {
+        if (points.size() < 2)
+        {
+            return;
+        }
+        boolean useCurves = config.useCurvedRouteLines();
+        for (int i = 1; i < points.size(); i++)
+        {
+            Color color = segmentColors.get(i - 1);
+            if (color == null)
+            {
+                continue;
+            }
+
+            Point from = points.get(i - 1);
+            Point to = points.get(i);
+            Point previous = i > 1 ? points.get(i - 2) : null;
+            Point next = (i + 1 < points.size()) ? points.get(i + 1) : null;
+
+            g.setColor(color);
+            if (useCurves)
+            {
+                drawCurvedSegment(g, previous, from, to, next);
+            }
+            else
+            {
+                g.drawLine(from.getX(), from.getY(), to.getX(), to.getY());
+            }
+        }
+    }
+
+    private void drawCurvedSegment(Graphics2D g, Point previous, Point from, Point to, Point next)
+    {
+        Point p0 = previous != null ? previous : from;
+        Point p1 = from;
+        Point p2 = to;
+        Point p3 = next != null ? next : to;
+
+        double tension = 0.85; // 0 -> straight lines, 1 -> stronger curves
+        double c1x = p1.getX() + (p2.getX() - p0.getX()) * tension / 6.0;
+        double c1y = p1.getY() + (p2.getY() - p0.getY()) * tension / 6.0;
+        double c2x = p2.getX() - (p3.getX() - p1.getX()) * tension / 6.0;
+        double c2y = p2.getY() - (p3.getY() - p1.getY()) * tension / 6.0;
+
+        Path2D path = new Path2D.Double();
+        path.moveTo(p1.getX(), p1.getY());
+        path.curveTo(c1x, c1y, c2x, c2y, p2.getX(), p2.getY());
+        g.draw(path);
     }
 
     private void drawDirectionArrow(Graphics2D g, Point from, Point to, float lineWidth)
